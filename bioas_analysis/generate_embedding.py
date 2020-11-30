@@ -14,8 +14,11 @@ from utils import *
 property_vectors = {}
 zerovector = []
 
-def generate_embeddings(embedding_method, data_dir):
+def generate_embeddings(embedding_method, data_dir, kb_atomspace=False):
     if embedding_method == "FMBPV":
+      if kb_atomspace:
+        atomspace = kb_atomspace
+      else:
         print("--- Load the AtomSpace")
         atomspace = AtomSpace()
         initialize_opencog(atomspace)
@@ -25,9 +28,9 @@ def generate_embeddings(embedding_method, data_dir):
             if i in attractions:
                 scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
 
-        build_property_vectors(atomspace, data_dir)
-        do_kpca()
-        export_property_vectors(data_dir)
+      build_property_vectors(atomspace, data_dir)
+      do_kpca()
+      export_property_vectors(data_dir)
 
 def build_property_vectors(atomspace, data_dir):
   print("--- Building property vectors")
@@ -70,7 +73,7 @@ def do_kpca():
       a = a.toarray().flatten()
       row = []
       j = 0
-      print("--- Working on {}/{}...".format(cnt, total))
+      print("--- Working on {}/{} ...".format(cnt, total))
       for b in X:
         b = b.toarray().flatten()
         cnt += 1
