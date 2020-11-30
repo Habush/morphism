@@ -28,7 +28,6 @@ def apply_subset_rule1(atomspace):
   print("--- Inferring subsets")
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients_subset_rule.scm\")")
-  scheme_eval(atomspace, "(pln-add-rule \"gene-expression-subset-rule\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-data-subset-rule\")")
   target = """
     (Subset 
@@ -49,6 +48,11 @@ def apply_subset_rule1(atomspace):
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients_subset_rule.scm\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-data-boolean-subset-rule\")")
+  scheme_eval(atomspace, bc) 
+
+  scheme_eval(atomspace, "(pln-load 'empty)")
+  scheme_eval(atomspace, "(pln-load-from-path \"rules/patients_subset_rule.scm\")")
+  scheme_eval(atomspace, "(pln-add-rule \"gene-expression-subset-rule\")")
   scheme_eval(atomspace, bc) 
   
 def apply_subset_rule2(atomspace):
@@ -128,9 +132,10 @@ def calculate_truth_values(atomspace):
     except Exception as e:
       print(e)
       continue
+
 def remove_processed_subsets(atomspace):
   for e in atomspace.get_atoms_by_type(types.SubsetLink):
-    if e.tv.mean == 0 or e.tv.confidence == 0:
+    if e.out[0].type != types.SetLink:
       scheme_eval(atomspace,"(cog-delete {})".format(e))
 
 def export_all_atoms(atomspace):
