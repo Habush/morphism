@@ -1,13 +1,12 @@
 import os
 from datetime import date
 from utils import *
+from generate_embedding import *
 
 base_datasets_dir = os.getcwd() + "/cancer_data/"
 base_results_dir = os.getcwd() + "/results/cancer-{}/".format(str(date.today()))
 if not os.path.exists(base_results_dir):
   os.makedirs(base_results_dir)
-member_links_scm = base_results_dir + "member-links.scm"
-inheritance_links_scm = base_results_dir + "inheritance-links.scm"
 subset_links_scm = base_results_dir + "subset-links.scm"
 attraction_links_scm = base_results_dir + "attraction-links.scm"
 
@@ -136,8 +135,6 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace):
   print("--- Exporting Atoms to files")
-  write_atoms_to_file(member_links_scm, "(cog-get-atoms 'MemberLink)", atomspace)
-  write_atoms_to_file(inheritance_links_scm, "(cog-get-atoms 'InheritanceLink)", atomspace)
   write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
   write_atoms_to_file(attraction_links_scm, "(cog-get-atoms 'AttractionLink)", atomspace)
 
@@ -169,8 +166,9 @@ def generate_atoms():
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
     export_all_atoms(atomspace)
-    return base_results_dir
+    return base_results_dir, atomspace
 
 if __name__ == "__main__":
-    output_path = generate_atoms()
+    output_path, kb_as = generate_atoms()
     print("Output path {}".format(output_path))
+    generate_embeddings("FMBPV",output_path, kb_atomspace=kb_as)
