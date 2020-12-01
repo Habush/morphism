@@ -20,9 +20,23 @@ def populate_atomspace(atomspace):
   # scheme_eval(atomspace, "(load-file \"cancer_data/sample_patient_615289.scm\")")   
 
 def preprocess(atomspace):
+  # remove gene expressions and patient status with stv 0
   for e in atomspace.get_atoms_by_type(types.EvaluationLink):
     if e.tv.mean == 0:
       scheme_eval(atomspace,"(cog-delete {})".format(e))
+
+  # remove patients with no gene expression
+  filter_out = []
+  all_patients = [x for x in atomspace.get_atoms_by_type(types.ConceptNode) if str(x.name).isnumeric() and len(str(x.name)) > 1]
+  with_geneexpression = set([x.out[1] for x in atomspace.get_atoms_by_type(types.EvaluationLink) if x.out[0].type == types.LazyExecutionOutputLink])
+  for p in all_patients:
+    if p not in with_geneexpression:
+      filter_out.append(str(p))
+      scheme_eval(atomspace, "(cog-delete-recursive! {})".format(p))
+  with open(base_results_dir + "filtered_out_patients.scm", "w") as f:
+    f.write("\n".join(filter_out))
+  
+  return len(with_geneexpression)
 
 def apply_subset_rule1(atomspace):
   print("--- Inferring subsets")
@@ -108,13 +122,13 @@ def generate_attraction_links(atomspace):
   scheme_eval(atomspace, bc.format(target))
   scheme_eval(atomspace, bc.format(target2))
 
-def calculate_truth_values(atomspace):
+def calculate_truth_values(atomspace, len_patients):
   print("--- Calculating Truth Values")
 
   def get_confidence(count):
     return float(scheme_eval(atomspace, "(count->confidence {})".format(str(count))))
 
-  total_patients = len([x for x in atomspace.get_atoms_by_type(types.ConceptNode) if str(x.name).isnumeric()])
+  total_patients = len_patients
   for s in atomspace.get_atoms_by_type(types.SubsetLink):
     try:
       if s.out[0].type == types.SetLink and s.out[1].type == types.SatisfyingSetScopeLink:
@@ -164,10 +178,10 @@ def generate_atoms():
         "(close-port fp))"]))
 
     populate_atomspace(atomspace)
-    preprocess(atomspace)
+    total_patients = preprocess(atomspace)
     apply_subset_rule1(atomspace)
     apply_subset_rule2(atomspace)
-    calculate_truth_values(atomspace)
+    calculate_truth_values(atomspace, total_patients)
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
     export_all_atoms(atomspace)
