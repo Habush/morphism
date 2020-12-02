@@ -2,22 +2,14 @@ import os
 from datetime import date
 from utils import *
 from generate_embedding import *
+import argparse
 
-base_datasets_dir = os.getcwd() + "/cancer_data/"
-base_results_dir = os.getcwd() + "/results/cancer-{}/".format(str(date.today()))
-if not os.path.exists(base_results_dir):
-  os.makedirs(base_results_dir)
-subset_links_scm = base_results_dir + "subset-links.scm"
-attraction_links_scm = base_results_dir + "attraction-links.scm"
-
-def populate_atomspace(atomspace):
-  print("--- Populating the AtomSpace")
-  scheme_eval(atomspace, "(load-file \"cancer_data/normalized_patient_8gene_over_expr.scm\")")
-  scheme_eval(atomspace, "(load-file \"cancer_data/normalized_patient_8gene_under_expr.scm\")")
-  scheme_eval(atomspace, "(load-file \"cancer_data/subset-bp-patient-overexpr_8genes.scm\")")
-  scheme_eval(atomspace, "(load-file \"cancer_data/subset-bp-patient-underexpr_8genes.scm\")")  
-  scheme_eval(atomspace, "(load-file \"cancer_data/patient_data_state&preTX.scm\")")
-  # scheme_eval(atomspace, "(load-file \"cancer_data/sample_patient_615289.scm\")")   
+def populate_atomspace(atomspace, path):
+  print("--- Populating the AtomSpace {}".format(path))
+  for i in os.listdir(path):
+    if str(i).endswith(".scm"):
+      print(i)
+      scheme_eval(atomspace, "(load-file \"{}\")".format(os.path.join(path, i)))  
 
 def preprocess(atomspace):
   # remove gene expressions and patient status with stv 0
@@ -152,12 +144,14 @@ def remove_processed_subsets(atomspace):
     if e.out[0].type != types.SetLink:
       scheme_eval(atomspace,"(cog-delete {})".format(e))
 
-def export_all_atoms(atomspace):
+def export_all_atoms(atomspace, base_results_dir):
   print("--- Exporting Atoms to files")
+  subset_links_scm = base_results_dir + "subset-links.scm"
+  attraction_links_scm = base_results_dir + "attraction-links.scm"
   write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
   write_atoms_to_file(attraction_links_scm, "(cog-get-atoms 'AttractionLink)", atomspace)
 
-def generate_atoms():
+def generate_atoms(base_results_dir, base_datasets_dir):
     ### Initialize the AtomSpace ###
     atomspace = AtomSpace()
     initialize_opencog(atomspace)
@@ -177,17 +171,36 @@ def generate_atoms():
         "atoms)",
         "(close-port fp))"]))
 
-    populate_atomspace(atomspace)
+    populate_atomspace(atomspace,base_datasets_dir)
     total_patients = preprocess(atomspace)
     apply_subset_rule1(atomspace)
     apply_subset_rule2(atomspace)
     calculate_truth_values(atomspace, total_patients)
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
-    export_all_atoms(atomspace)
-    return base_results_dir, atomspace
+    export_all_atoms(atomspace, base_results_dir)
+    return atomspace
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Generate embedding vector for patients')
+    parser.add_argument('--datapath', type=str, default='',
+                        help='path to the source data')
+    parser.add_argument('--outputpath', type=str, default='',
+                        help='path to store the output files')
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    output_path, kb_as = generate_atoms()
-    print("Output path {}".format(output_path))
-    generate_embeddings("FMBPV",output_path, kb_atomspace=kb_as)
+  arguments = parse_args()
+  if arguments.datapath:
+    base_datasets_dir = arguments.datapath
+  else:
+    base_datasets_dir = os.getcwd() + "/cancer_data/"
+  if arguments.outputpath:
+    base_results_dir = arguments.outputpath
+  else:
+    base_results_dir = os.getcwd() + "/results/cancer-{}/".format(str(date.today()))
+
+  if not os.path.exists(base_results_dir):
+    os.makedirs(base_results_dir) 
+  kb_as = generate_atoms(base_results_dir, base_datasets_dir)
+  generate_embeddings("FMBPV",base_results_dir, kb_atomspace=kb_as)
