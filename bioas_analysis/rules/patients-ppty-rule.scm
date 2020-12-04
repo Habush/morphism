@@ -55,7 +55,7 @@
           ;; conclusion
           (Subset
             (Set P)
-            (SatisfyingSet
+            (SatisfyingSetScopeLink
               (Variable "$Pt")
               (SubsetLink
                 (And
