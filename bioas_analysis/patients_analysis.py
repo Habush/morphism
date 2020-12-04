@@ -121,9 +121,10 @@ def calculate_truth_values(atomspace, len_patients):
     return float(scheme_eval(atomspace, "(count->confidence {})".format(str(count))))
 
   total_patients = len_patients
-  for s in atomspace.get_atoms_by_type(types.SubsetLink):
+  ppty_subset = [s for s in atomspace.get_atoms_by_type(types.SubsetLink) 
+      if s.out[0].type == types.SetLink and s.out[1].type == types.SatisfyingSetScopeLink]
+  for s in ppty_subset:
     try:
-      if s.out[0].type == types.SetLink and s.out[1].type == types.SatisfyingSetScopeLink:
         # set tv of patients as 1 / total number of patients, 
         strength = 1 / total_patients
         confidence = get_confidence(total_patients)
@@ -136,8 +137,8 @@ def calculate_truth_values(atomspace, len_patients):
         confidence = get_confidence(total_patients)
         s.out[1].tv = TruthValue(strength, confidence)
     except Exception as e:
-      print(e)
-      continue
+        print(e)
+        continue
 
 def remove_processed_subsets(atomspace):
   for e in atomspace.get_atoms_by_type(types.SubsetLink):
