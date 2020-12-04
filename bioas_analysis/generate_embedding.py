@@ -34,7 +34,8 @@ def generate_embeddings(embedding_method, data_dir, kb_atomspace=False):
 
 def build_property_vectors(atomspace, data_dir):
   print("--- Building property vectors")
-  property_vector_pickle_beforekpca = os.path.join(data_dir, "property_vector_pickle_beforekpca.pkl")
+  property_vector_pickle_beforekpca = os.path.join(data_dir, 
+            "property_vector_pickle_beforekpca_{}.pkl".format(str(date.today())))
   global property_vectors
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
@@ -100,7 +101,8 @@ def do_kpca():
     property_vectors[k] = kpca_v
 
 def export_property_vectors(data_dir):
-    property_vector_pickle = os.path.join(data_dir, "property_vector_pickle.pkl")
+    property_vector_pickle = os.path.join(data_dir, 
+            "property_vector_pickle_{}.pkl".format(str(date.today())))
 
     print("--- Exporting property vectors to \"{}\"".format(property_vector_pickle))
     print(len(property_vectors.keys()))
