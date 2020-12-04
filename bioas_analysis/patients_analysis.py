@@ -1,11 +1,11 @@
 import os
-from datetime import date
+from datetime import date, datetime
 from utils import *
 from generate_embedding import *
 import argparse
 
 def populate_atomspace(atomspace, path):
-  print("--- Populating the AtomSpace {}".format(path))
+  print("--- {} Populating the AtomSpace {}".format(datetime.now(), path))
   for i in os.listdir(path):
     if str(i).endswith(".scm"):
       print(i)
@@ -31,7 +31,7 @@ def preprocess(atomspace):
   return len(with_geneexpression)
 
 def apply_subset_rule1(atomspace):
-  print("--- Inferring subsets")
+  print("--- {} Inferring subsets".format(datetime.now()))
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients_subset_rule.scm\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-data-subset-rule\")")
@@ -115,30 +115,13 @@ def generate_attraction_links(atomspace):
   scheme_eval(atomspace, bc.format(target2))
 
 def calculate_truth_values(atomspace, len_patients):
-  print("--- Calculating Truth Values")
-
-  def get_confidence(count):
-    return float(scheme_eval(atomspace, "(count->confidence {})".format(str(count))))
-
-  total_patients = len_patients
-  ppty_subset = [s for s in atomspace.get_atoms_by_type(types.SubsetLink) 
-      if s.out[0].type == types.SetLink and s.out[1].type == types.SatisfyingSetScopeLink]
-  for s in ppty_subset:
-    try:
-        # set tv of patients as 1 / total number of patients, 
-        strength = 1 / total_patients
-        confidence = get_confidence(total_patients)
-        s.out[0].tv = TruthValue(strength, confidence)
-
-        # get the SatisfyingSetScopeLink and use Get to get the list, devide the number of elements by total no of patients 
-        satisf = s.out[1]
-        outgoing = " ".join([str(i) for i in satisf.out])
-        strength = int(scheme_eval(atomspace, """(length (cog-outgoing-set (cog-execute! (Get {}))))""".format(outgoing))) / total_patients
-        confidence = get_confidence(total_patients)
-        s.out[1].tv = TruthValue(strength, confidence)
-    except Exception as e:
-        print(e)
-        continue
+  print("--- {} Calculating Truth Values".format(datetime.now()))
+  calculate_stv = """
+    (define total_patients {})
+    (primitive-load "rules/calculate_stv.scm")
+    (cog-execute! calculate_stv)
+  """.format(len_patients)
+  scheme_eval(atomspace, calculate_stv)
 
 def remove_processed_subsets(atomspace):
   for e in atomspace.get_atoms_by_type(types.SubsetLink):
@@ -146,7 +129,7 @@ def remove_processed_subsets(atomspace):
       scheme_eval(atomspace,"(cog-delete {})".format(e))
 
 def export_all_atoms(atomspace, base_results_dir):
-  print("--- Exporting Atoms to files")
+  print("--- {} Exporting Atoms to files".format(datetime.now()))
   subset_links_scm = base_results_dir + "subset-links.scm"
   attraction_links_scm = base_results_dir + "attraction-links.scm"
   write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
@@ -160,9 +143,8 @@ def generate_atoms(base_results_dir, base_datasets_dir):
     ### Guile setup ###
     scheme_eval(atomspace, "(add-to-load-path \".\")")
     scheme_eval(atomspace, """
-    (use-modules (opencog) (opencog bioscience) (opencog ure) (opencog logger)
+    (use-modules (opencog) (opencog bioscience) (opencog ure)
     (opencog pln) (opencog persist-file) (srfi srfi-1) (opencog exec))
-    (ure-logger-set-level! "debug")
     """)
     scheme_eval(atomspace, " ".join([
     "(define (write-atoms-to-file file atoms)",
@@ -205,3 +187,4 @@ if __name__ == "__main__":
     os.makedirs(base_results_dir) 
   kb_as = generate_atoms(base_results_dir, base_datasets_dir)
   generate_embeddings("FMBPV",base_results_dir, kb_atomspace=kb_as)
+  print("Done {}".format(datetime.now()))
