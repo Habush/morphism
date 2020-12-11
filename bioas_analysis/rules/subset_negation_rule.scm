@@ -50,7 +50,7 @@
 
 ;; Patients rule
 (define subset-negation-patients-rule
-  (subset-condition-negation (Type "ConceptNode") (Type "SatisfyingSetScopeLink")))
+  (subset-condition-negation (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
 ;; name  
 (define subset-negation-patients-rule-name
   (DefinedSchemaNode "subset-negation-patients-rule"))

@@ -5,7 +5,7 @@
          (Ppty (Variable "$Ppty")))
     (Bind
       (VariableSet
-        (TypedVariable Pt (Type "ConceptNode"))
+        (TypedVariable Pt (Type "PatientNode"))
         (TypedVariable Ppty (Type "SatisfyingSetScopeLink")))
       (Present
         (Subset

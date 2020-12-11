@@ -35,7 +35,7 @@
     (Bind
       (VariableSet
         (TypedVariable B (TypeInh "ConceptNode"))
-        (TypedVariable P (Type "ConceptNode"))
+        (TypedVariable P (Type "PatientNode"))
         (TypedVariable S (Type "SchemaNode")))
       (Present
         (SubsetLink

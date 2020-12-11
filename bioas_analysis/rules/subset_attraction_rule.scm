@@ -54,7 +54,7 @@
         (if (< 0 ATTc) (cog-merge-hi-conf-tv! ATT ATTtv)))))
 
 (define subset-attraction-patients-rule
-  (subset-attraction-rule (Type "ConceptNode") (Type "SatisfyingSetScopeLink")))
+  (subset-attraction-rule (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
 (define subset-attraction-patients-rule-name
   (DefinedSchemaNode "subset-attraction-patients-rule"))
 (DefineLink subset-attraction-patients-rule-name

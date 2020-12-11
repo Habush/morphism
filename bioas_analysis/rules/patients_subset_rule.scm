@@ -23,7 +23,7 @@
     (Bind
       (VariableSet
         (TypedVariable A (Type "GeneNode"))
-        (TypedVariable B (Type "ConceptNode"))
+        (TypedVariable B (Type "PatientNode"))
         (TypedVariable S (Type "SchemaNode")))
       (Present
         (EvaluationLink
@@ -57,7 +57,7 @@
          (C (Variable "$C")))
     (Bind
       (VariableSet
-        (TypedVariable P (Type "ConceptNode"))
+        (TypedVariable P (Type "PatientNode"))
         (TypedVariable Pr (Type "PredicateNode"))
         (TypedVariable C (Type "ConceptNode")))
       (Present
@@ -91,7 +91,7 @@
          (Pr (Variable "$Pr")))
     (Bind
       (VariableSet
-        (TypedVariable P (Type "ConceptNode"))
+        (TypedVariable P (Type "PatientNode"))
         (TypedVariable Pr (Type "PredicateNode")))
       (Present
         (EvaluationLink

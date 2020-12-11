@@ -14,7 +14,7 @@ from utils import *
 property_vectors = {}
 zerovector = []
 
-def generate_embeddings(embedding_method, data_dir, kb_atomspace=False):
+def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=False):
     if embedding_method == "FMBPV":
       if kb_atomspace:
         atomspace = kb_atomspace
@@ -28,21 +28,22 @@ def generate_embeddings(embedding_method, data_dir, kb_atomspace=False):
             if i in attractions:
                 scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
 
-      build_property_vectors(atomspace, data_dir)
+      build_property_vectors(atomspace, data_dir, node_type)
       do_kpca()
       export_property_vectors(data_dir)
 
-def build_property_vectors(atomspace, data_dir):
+def build_property_vectors(atomspace, data_dir, node_type):
   print("--- Building property vectors")
   property_vector_pickle_beforekpca = os.path.join(data_dir, 
             "property_vector_pickle_beforekpca_{}.pkl".format(str(date.today())))
   global property_vectors
-  ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
+  ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
-  print(len(nodes))
+  main_nodes = atomspace.get_atoms_by_type(getattr(types, node_type))
+  print(len(main_nodes))
   print(len(ppty))
-  # all_pats = get_concepts(atomspace, concepts_lst + genes_lst)
   for node in nodes:
+    if node.out[0] in main_nodes or node in main_nodes:
       p_vec = []
       for p in ppty:
           if p.atomspace.is_link_in_atomspace(types.AttractionLink, [node, p]):

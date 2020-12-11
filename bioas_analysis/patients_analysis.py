@@ -19,7 +19,7 @@ def preprocess(atomspace):
 
   # remove patients with no gene expression
   filter_out = []
-  all_patients = [x for x in atomspace.get_atoms_by_type(types.ConceptNode) if str(x.name).isnumeric() and len(str(x.name)) > 1]
+  all_patients = atomspace.get_atoms_by_type(types.PatientNode)
   with_geneexpression = set([x.out[1] for x in atomspace.get_atoms_by_type(types.EvaluationLink) if x.out[0].type == types.LazyExecutionOutputLink])
   for p in all_patients:
     if p not in with_geneexpression:
@@ -44,7 +44,7 @@ def apply_subset_rule1(atomspace):
     (pln-bc 
       {}
       #:vardecl (VariableSet 
-        (TypedVariable (Variable "$p") (Type "ConceptNode")) 
+        (TypedVariable (Variable "$p") (Type "PatientNode")) 
         (TypedVariable (Variable "$ppty") (Type "SatisfyingSetScopeLink")))
       #:maximum-iterations 2
       #:complexity-penalty 10)
@@ -186,5 +186,5 @@ if __name__ == "__main__":
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir) 
   kb_as = generate_atoms(base_results_dir, base_datasets_dir)
-  generate_embeddings("FMBPV",base_results_dir, kb_atomspace=kb_as)
+  generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
   print("Done {}".format(datetime.now()))
