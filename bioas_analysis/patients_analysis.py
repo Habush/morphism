@@ -65,26 +65,17 @@ def apply_subset_rule2(atomspace):
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients-ppty-rule.scm\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-ppty-subset-rule\")")
-  target = """ 
-  (Subset 
+  target = """
+    (Subset 
       (Set (Variable "$p"))
-      (SatisfyingSet
-          (Variable "$pt")
-          (SubsetLink
-          (And
-              (Variable "$c")
-              (ConceptNode "profiled-genes"))
-          (SatisfyingSetScopeLink
-              (VariableNode "$G")
-              (EvaluationLink
-              (LazyExecutionOutputLink
-                  (Variable "$S")
-                  (VariableNode "$G"))
-              (Variable "$pt"))))))"""
+      (Variable "$ppty"))"""
 
   bc = """
   (pln-bc 
     {}
+    #:vardecl (VariableSet 
+      (TypedVariable (Variable "$p") (Type "PatientNode")) 
+      (TypedVariable (Variable "$ppty") (Type "SatisfyingSetScopeLink")))
     #:maximum-iterations 2
     #:complexity-penalty 10)""".format(target)
   scheme_eval(atomspace, bc)  
