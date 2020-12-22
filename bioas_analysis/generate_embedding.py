@@ -11,7 +11,6 @@ from sklearn.decomposition import PCA, KernelPCA
 from datetime import date
 from utils import *
 
-property_vectors = {}
 zerovector = []
 
 def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=False):
@@ -28,15 +27,15 @@ def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=Fals
             if i in attractions:
                 scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
 
-      build_property_vectors(atomspace, data_dir, node_type)
-      do_kpca()
-      export_property_vectors(data_dir)
+      property_vectors = build_property_vectors(atomspace, data_dir, node_type)
+      property_vectors = do_kpca(property_vectors)
+      export_property_vectors(data_dir, property_vectors)
 
 def build_property_vectors(atomspace, data_dir, node_type):
   print("--- Building property vectors")
   property_vector_pickle_beforekpca = os.path.join(data_dir, 
             "property_vector_pickle_beforekpca_{}.pkl".format(str(date.today())))
-  global property_vectors
+  property_vectors = {}
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
   main_nodes = atomspace.get_atoms_by_type(getattr(types, node_type))
@@ -57,13 +56,14 @@ def build_property_vectors(atomspace, data_dir, node_type):
       if sum(p_vec) != 0:
         property_vectors[node.out[0].name] = sparse.csr_matrix(p_vec)
       else:
-        zerovector.append(node.name)
+        zerovector.append(str(node))
         continue
 
   with open(property_vector_pickle_beforekpca, "wb") as f:
       pickle.dump(property_vectors, f)
+  return property_vectors
 
-def do_kpca():
+def do_kpca(property_vectors):
   def kernel_func(X):
     len_x = X.shape[0]
     dist_array = numpy.random.random((len_x, len_x)).astype(numpy.float16) * 0 - 1.0
@@ -100,8 +100,9 @@ def do_kpca():
 
   for k, kpca_v in zip(property_vectors.keys(), X_kpca):
     property_vectors[k] = kpca_v
+  return property_vectors
 
-def export_property_vectors(data_dir):
+def export_property_vectors(data_dir, property_vectors):
     property_vector_pickle = os.path.join(data_dir, 
             "property_vector_pickle_{}.pkl".format(str(date.today())))
 
@@ -111,7 +112,9 @@ def export_property_vectors(data_dir):
     with open(property_vector_pickle, "wb") as f:
         pickle.dump(property_vectors, f)
 
-    with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
+    if len(zerovector) > 0:
+      print(len(zerovector))
+      with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
         z.write("\n".join(zerovector))
 
 def tanimoto(v1, v2):
