@@ -28,6 +28,8 @@
 ;;             VariableNode "$G"
 ;;           Variable "$P"
 
+(load-from-path "rules/patients_subset_rule.scm")
+
 (define patient-ppty-subset-rule
   (let* ((B (Variable "$B"))
          (P (Variable "$P"))
@@ -88,7 +90,7 @@
           (pr (car premises))
           (st (cog-mean pr))
           (conf (cog-confidence pr)))
-      (if (> conf 0) (cog-merge-hi-conf-tv! Ss (stv st conf))))))
+      (if (> conf 0) (set-stv Ss (stv st conf))))))
 
 ; Name the rule
 (define patient-ppty-subset-rule-name

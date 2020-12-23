@@ -119,7 +119,20 @@
           (eval (car premises))
           (st (cog-mean eval))
           (conf (cog-confidence eval)))
-      (if (> conf 0) (cog-merge-hi-conf-tv! Ss (stv st conf))))))
+      (if (> conf 0) (set-stv Ss (stv st conf))))))
+
+(define (set-stv Ss Sstv)
+  (let* ((elem1 (car (cog-outgoing-set Ss)))
+        (elem2 (cadr (cog-outgoing-set Ss)))
+        (S1 (if (= (cog-confidence elem1) 0) (/ 1 total_patients) #f))
+        (conf (count->confidence total_patients))
+        (S2 (if (= (cog-confidence elem2) 0)
+          (/ (length (cog-outgoing-set (cog-execute! (Get (cog-outgoing-set elem2))))) total_patients) #f)))
+    (cog-merge-hi-conf-tv!
+      (Subset 
+        (if S1 (cog-merge-hi-conf-tv! elem1 (stv S1 conf)) elem1)
+        (if S2 (cog-merge-hi-conf-tv! elem2 (stv S2 conf)) elem2)) 
+      Sstv)))
 
 ; Name the rule
 (define gene-expression-subset-rule-name

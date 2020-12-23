@@ -105,15 +105,6 @@ def generate_attraction_links(atomspace):
   scheme_eval(atomspace, bc.format(target))
   scheme_eval(atomspace, bc.format(target2))
 
-def calculate_truth_values(atomspace, len_patients):
-  print("--- {} Calculating Truth Values".format(datetime.now()))
-  calculate_stv = """
-    (define total_patients {})
-    (primitive-load "rules/calculate_stv.scm")
-    (cog-execute! calculate_stv)
-  """.format(len_patients)
-  scheme_eval(atomspace, calculate_stv)
-
 def remove_processed_subsets(atomspace):
   for e in atomspace.get_atoms_by_type(types.SubsetLink):
     if e.out[0].type != types.SetLink:
@@ -147,9 +138,9 @@ def generate_atoms(base_results_dir, base_datasets_dir):
 
     populate_atomspace(atomspace,base_datasets_dir)
     total_patients = preprocess(atomspace)
+    scheme_eval(atomspace, "(define total_patients {})".format(total_patients))
     apply_subset_rule1(atomspace)
     apply_subset_rule2(atomspace)
-    calculate_truth_values(atomspace, total_patients)
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
     export_all_atoms(atomspace, base_results_dir)
