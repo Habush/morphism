@@ -112,9 +112,9 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace, base_results_dir):
   print("--- {} Exporting Atoms to files".format(datetime.now()))
-  subset_links_scm = base_results_dir + "subset-links.scm"
+  # subset_links_scm = base_results_dir + "subset-links.scm"
   attraction_links_scm = base_results_dir + "attraction-links.scm"
-  write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
+  # write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
   write_atoms_to_file(attraction_links_scm, "(cog-get-atoms 'AttractionLink)", atomspace)
 
 def generate_atoms(base_results_dir, base_datasets_dir):
@@ -143,7 +143,6 @@ def generate_atoms(base_results_dir, base_datasets_dir):
     apply_subset_rule2(atomspace)
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
-    export_all_atoms(atomspace, base_results_dir)
     return atomspace
 
 def parse_args():
@@ -170,3 +169,4 @@ if __name__ == "__main__":
   kb_as = generate_atoms(base_results_dir, base_datasets_dir)
   generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
   print("Done {}".format(datetime.now()))
+  export_all_atoms(kb_as, base_results_dir)
