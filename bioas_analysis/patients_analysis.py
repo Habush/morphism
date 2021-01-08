@@ -12,6 +12,7 @@ def populate_atomspace(atomspace, path):
       scheme_eval(atomspace, "(load-file \"{}\")".format(os.path.join(path, i)))  
 
 def preprocess(atomspace):
+  print("--- {} Preprocessing the AtomSpace".format(datetime.now()))
   # remove gene expressions, pln results and patient status with mean 0
   for e in atomspace.get_atoms_by_type(types.SubsetLink) + atomspace.get_atoms_by_type(types.EvaluationLink):
     if e.tv.mean == 0:
@@ -31,7 +32,7 @@ def preprocess(atomspace):
   return len(with_geneexpression)
 
 def apply_subset_rule1(atomspace):
-  print("--- {} Inferring subsets".format(datetime.now()))
+  print("--- {} Inferring subsets, rule 1".format(datetime.now()))
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients_subset_rule.scm\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-data-subset-rule\")")
@@ -62,6 +63,7 @@ def apply_subset_rule1(atomspace):
   scheme_eval(atomspace, bc) 
   
 def apply_subset_rule2(atomspace):
+  print("--- {} Inferring subsets, rule 2".format(datetime.now()))
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/patients-ppty-rule.scm\")")
   scheme_eval(atomspace, "(pln-add-rule \"patient-ppty-subset-rule\")")
@@ -81,6 +83,7 @@ def apply_subset_rule2(atomspace):
   scheme_eval(atomspace, bc)  
 
 def generate_attraction_links(atomspace):
+  print("--- {} Generate Attractions".format(datetime.now()))
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/subset_negation_rule.scm\")")
   scheme_eval(atomspace, "(pln-load-from-path \"rules/subset_attraction_rule.scm\")")
@@ -159,5 +162,5 @@ if __name__ == "__main__":
     os.makedirs(base_results_dir) 
   kb_as = generate_atoms(base_results_dir, base_datasets_dir)
   generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
-  print("Done {}".format(datetime.now()))
   export_all_atoms(kb_as, base_results_dir)
+  print("Done {}".format(datetime.now()))
