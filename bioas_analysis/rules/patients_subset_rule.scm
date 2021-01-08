@@ -121,18 +121,40 @@
           (conf (cog-confidence eval)))
       (if (> conf 0) (set-stv Ss (stv st conf))))))
 
+;; Calculate TV for the elements of the subset
 (define (set-stv Ss Sstv)
   (let* ((elem1 (car (cog-outgoing-set Ss)))
         (elem2 (cadr (cog-outgoing-set Ss)))
         (S1 (if (= (cog-confidence elem1) 0) (/ 1 total_patients) #f))
         (conf (count->confidence total_patients))
-        (S2 (if (= (cog-confidence elem2) 0)
-          (/ (length (cog-outgoing-set (cog-execute! (Get (cog-outgoing-set elem2))))) total_patients) #f)))
+        (S2 (if (= (cog-confidence elem2) 0) (ppty-mean-sum elem2) #f)))
     (cog-merge-hi-conf-tv!
       (Subset 
         (if S1 (cog-merge-hi-conf-tv! elem1 (stv S1 conf)) elem1)
         (if S2 (cog-merge-hi-conf-tv! elem2 (stv S2 conf)) elem2)) 
       Sstv)))
+
+;; ----Example property----
+;; (SatisfyingSetScopeLink
+;; (VariableNode "$patient")
+;; (EvaluationLink
+;;   (LazyExecutionOutputLink
+;;     (SchemaNode "make-underexpression-predicate-for-gene")
+;;     (GeneNode "BRCA1"))
+;;   (VariableNode "$patient")))
+;;
+(define (ppty-mean-sum ppty)
+  (let* ((means (cog-outgoing-set (cog-execute! (Bind 
+        (cog-outgoing-set ppty)
+        (ExecutionOutput
+          (GroundedSchema "scm: get-mean")
+            (List
+              (cadr (cog-outgoing-set ppty))
+            )))))))
+  ( / (fold + 0 (map (lambda (x) (string->number (cog-name x))) means))  total_patients)))
+
+(define (get-mean node)
+  (Number (cog-mean node)))
 
 ; Name the rule
 (define gene-expression-subset-rule-name
