@@ -12,8 +12,8 @@ def populate_atomspace(atomspace, path):
       scheme_eval(atomspace, "(load-file \"{}\")".format(os.path.join(path, i)))  
 
 def preprocess(atomspace):
-  # remove gene expressions and patient status with stv 0
-  for e in atomspace.get_atoms_by_type(types.EvaluationLink):
+  # remove gene expressions, pln results and patient status with mean 0
+  for e in atomspace.get_atoms_by_type(types.SubsetLink) + atomspace.get_atoms_by_type(types.EvaluationLink):
     if e.tv.mean == 0:
       scheme_eval(atomspace,"(cog-delete {})".format(e))
 
@@ -112,10 +112,8 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace, base_results_dir):
   print("--- {} Exporting Atoms to files".format(datetime.now()))
-  # subset_links_scm = base_results_dir + "subset-links.scm"
-  attraction_links_scm = base_results_dir + "attraction-links.scm"
-  # write_atoms_to_file(subset_links_scm, "(cog-get-atoms 'SubsetLink)", atomspace)
-  write_atoms_to_file(attraction_links_scm, "(cog-get-atoms 'AttractionLink)", atomspace)
+  result_scm = base_results_dir + "scm-results.scm"
+  scheme_eval(atomspace, """(export-all-atoms "{}")""".format(result_scm))
 
 def generate_atoms(base_results_dir, base_datasets_dir):
     ### Initialize the AtomSpace ###
@@ -128,13 +126,6 @@ def generate_atoms(base_results_dir, base_datasets_dir):
     (use-modules (opencog) (opencog bioscience) (opencog ure)
     (opencog pln) (opencog persist-file) (srfi srfi-1) (opencog exec))
     """)
-    scheme_eval(atomspace, " ".join([
-    "(define (write-atoms-to-file file atoms)",
-        "(define fp (open-output-file file))",
-        "(for-each",
-        "(lambda (x) (display x fp))",
-        "atoms)",
-        "(close-port fp))"]))
 
     populate_atomspace(atomspace,base_datasets_dir)
     total_patients = preprocess(atomspace)
