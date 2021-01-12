@@ -115,8 +115,10 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace, base_results_dir):
   print("--- {} Exporting Atoms to files".format(datetime.now()))
-  result_scm = base_results_dir + "scm-results.scm"
-  scheme_eval(atomspace, """(export-all-atoms "{}")""".format(result_scm))
+  result_scm = base_results_dir + "AttractionLinks-results.scm"
+  att = atomspace.get_atoms_by_type(types.AttractionLink)
+  with open(result_scm, "w") as f:
+    f.write("\n".join([str(a) for a in att]))
 
 def generate_atoms(base_results_dir, base_datasets_dir):
     ### Initialize the AtomSpace ###
