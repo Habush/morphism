@@ -10,6 +10,7 @@ from scipy.stats import kendalltau, pearsonr, spearmanr
 from sklearn.decomposition import PCA, KernelPCA
 from datetime import date
 from utils import *
+import pandas as pd
 
 zerovector = []
 
@@ -39,25 +40,37 @@ def build_property_vectors(atomspace, data_dir, node_type):
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
   main_nodes = atomspace.get_atoms_by_type(getattr(types, node_type))
+  index_mapping = dict(zip(range(len(ppty)), ppty))
+
+  property_df = pd.DataFrame([], columns=["pid"] + list(index_mapping.keys()))
   print(len(main_nodes))
   print(len(ppty))
   for node in nodes:
     if node.out[0] in main_nodes or node in main_nodes:
       p_vec = []
-      for p in ppty:
-          if p.atomspace.is_link_in_atomspace(types.AttractionLink, [node, p]):
-              # print("Attraction {} {}".format(node, p))
-              attraction = AttractionLink(node, p)
+      for pt in ppty:
+          if pt.atomspace.is_link_in_atomspace(types.AttractionLink, [node, pt]):
+              attraction = AttractionLink(node, pt)
               attraction_tv = attraction.tv
-              p_vec.append(attraction.tv.mean * attraction.tv.confidence)
+              # weighted product, to give more weight to the strength s^p * c^(T-p)
+              # with p = 1.5 and T = 2
+              wp = attraction.tv.mean**1.5 * attraction.tv.confidence**(0.5)
+              p_vec.append(wp)
           else:
               p_vec.append(0.0)
 
       if sum(p_vec) != 0:
-        property_vectors[node.out[0].name] = sparse.csr_matrix(p_vec)
+        property_df.loc[len(property_df),:] = [node.out[0].name] + p_vec
       else:
         zerovector.append(str(node))
         continue
+  # normalize the vector
+  for c in index_mapping.keys():
+    property_df[c] = property_df[c] / max(property_df[c])
+
+  #compress matrix and return dic
+  for i,j in enumerate(property_df["pid"]):
+    property_vectors[j] = sparse.csr_matrix(property_df.loc[i,index_mapping.keys()].values.tolist())
 
   with open(property_vector_pickle_beforekpca, "wb") as f:
       pickle.dump(property_vectors, f)
