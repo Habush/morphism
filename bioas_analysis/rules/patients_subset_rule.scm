@@ -130,7 +130,7 @@
         (S2 (if (= (cog-confidence elem2) 0) (ppty-mean-sum elem2) #f)))
     (cog-merge-hi-conf-tv!
       (Subset 
-        (if S1 (cog-merge-hi-conf-tv! elem1 (stv S1 conf)) elem1)
+        (if S1 (cog-merge-hi-conf-tv! elem1 (stv S1 1)) elem1)
         (if S2 (cog-merge-hi-conf-tv! elem2 (stv S2 conf)) elem2)) 
       Sstv)))
 
