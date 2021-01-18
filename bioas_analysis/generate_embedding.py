@@ -1,6 +1,7 @@
 import numpy
 from scipy import sparse
 import os
+import json
 import pickle
 import random
 from gensim.models import Word2Vec
@@ -34,17 +35,15 @@ def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=Fals
 
 def build_property_vectors(atomspace, data_dir, node_type):
   print("--- Building property vectors")
-  property_vector_pickle_beforekpca = os.path.join(data_dir, 
-            "property_vector_pickle_beforekpca_{}.pkl".format(str(date.today())))
   property_vectors = {}
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
   main_nodes = atomspace.get_atoms_by_type(getattr(types, node_type))
   index_mapping = dict(zip(range(len(ppty)), ppty))
 
-  property_df = pd.DataFrame([], columns=["pid"] + list(index_mapping.keys()))
-  print(len(main_nodes))
-  print(len(ppty))
+  property_df = pd.DataFrame([], columns=["patient_ID"] + list(index_mapping.keys()))
+  print("Number of {}:{}".format(node_type, len(main_nodes)))
+  print("Number of properties: {}".format(len(ppty)))
   for node in nodes:
     if node.out[0] in main_nodes or node in main_nodes:
       p_vec = []
@@ -68,12 +67,15 @@ def build_property_vectors(atomspace, data_dir, node_type):
   for c in index_mapping.keys():
     property_df[c] = property_df[c] / max(property_df[c])
 
+  # Dump the vector in CSV format (before applying kpca)
+  property_vector_pickle_beforekpca = os.path.join(data_dir, 
+            "property_vector_beforekpca_{}.csv".format(str(date.today())))
+  property_df.to_csv(property_vector_pickle_beforekpca, sep="\t", index=False)
+
   #compress matrix and return dic
-  for i,j in enumerate(property_df["pid"]):
+  for i,j in enumerate(property_df["patient_ID"]):
     property_vectors[j] = sparse.csr_matrix(property_df.loc[i,index_mapping.keys()].values.tolist())
 
-  with open(property_vector_pickle_beforekpca, "wb") as f:
-      pickle.dump(property_vectors, f)
   return property_vectors
 
 def do_kpca(property_vectors):
