@@ -120,7 +120,7 @@ def export_all_atoms(atomspace, base_results_dir):
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
 
-def generate_atoms(base_results_dir, base_datasets_dir):
+def generate_atoms(base_results_dir, base_datasets_dir, filterbp):
     ### Initialize the AtomSpace ###
     atomspace = AtomSpace()
     initialize_opencog(atomspace)
@@ -134,6 +134,9 @@ def generate_atoms(base_results_dir, base_datasets_dir):
 
     populate_atomspace(atomspace,base_datasets_dir)
     total_patients = preprocess(atomspace)
+    if filterbp:
+      print("--- {} Filtering BP".format(datetime.now()))
+      atomspace = filter_bp(atomspace)
     scheme_eval(atomspace, "(define total_patients {})".format(total_patients))
     apply_subset_rule1(atomspace)
     apply_subset_rule2(atomspace)
@@ -147,6 +150,8 @@ def parse_args():
                         help='path to the source data')
     parser.add_argument('--outputpath', type=str, default='',
                         help='path to store the output files')
+    parser.add_argument('--filterbp', type=str, default=False,
+                        help='filter biological process only')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -159,10 +164,14 @@ if __name__ == "__main__":
     base_results_dir = arguments.outputpath
   else:
     base_results_dir = os.getcwd() + "/results/cancer-{}/".format(str(date.today()))
+  if arguments.filterbp:
+    filterbp = True
+  else:
+    filterbp = False
 
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir) 
-  kb_as = generate_atoms(base_results_dir, base_datasets_dir)
+  kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp)
   generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
   export_all_atoms(kb_as, base_results_dir)
   print("Done {}".format(datetime.now()))
