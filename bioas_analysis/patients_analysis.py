@@ -11,7 +11,7 @@ def populate_atomspace(atomspace, path):
       print(i)
       scheme_eval(atomspace, "(load-file \"{}\")".format(os.path.join(path, i)))  
 
-def preprocess(atomspace):
+def preprocess(atomspace, universe):
   print("--- {} Preprocessing the AtomSpace".format(datetime.now()))
   # remove gene expressions, pln results and patient status with mean 0
   for e in atomspace.get_atoms_by_type(types.SubsetLink) + atomspace.get_atoms_by_type(types.EvaluationLink):
@@ -23,6 +23,10 @@ def preprocess(atomspace):
   all_patients = atomspace.get_atoms_by_type(types.PatientNode)
   with_geneexpression = set([x.out[1] for x in atomspace.get_atoms_by_type(types.EvaluationLink) if x.out[0].type == types.LazyExecutionOutputLink])
   for p in all_patients:
+    if universe:
+      # remove patients not in the given universe set
+      if not p.name in universe:
+        scheme_eval(atomspace, "(cog-delete-recursive! {})".format(p))
     if p not in with_geneexpression:
       filter_out.append(str(p))
       scheme_eval(atomspace, "(cog-delete-recursive! {})".format(p))
@@ -120,7 +124,7 @@ def export_all_atoms(atomspace, base_results_dir):
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
 
-def generate_atoms(base_results_dir, base_datasets_dir, filterbp):
+def generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=False):
     ### Initialize the AtomSpace ###
     atomspace = AtomSpace()
     initialize_opencog(atomspace)
@@ -133,7 +137,7 @@ def generate_atoms(base_results_dir, base_datasets_dir, filterbp):
     """)
 
     populate_atomspace(atomspace,base_datasets_dir)
-    total_patients = preprocess(atomspace)
+    total_patients = preprocess(atomspace, universe)
     if filterbp:
       print("--- {} Filtering BP".format(datetime.now()))
       atomspace = filter_bp(atomspace)
@@ -152,6 +156,8 @@ def parse_args():
                         help='path to store the output files')
     parser.add_argument('--filterbp', type=str, default=False,
                         help='filter biological process only')
+    parser.add_argument('--universe', type=str, default='',
+                        help='Text file containing list of patients to do embedding for (train or test sets)')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -168,10 +174,14 @@ if __name__ == "__main__":
     filterbp = True
   else:
     filterbp = False
+  if arguments.universe:
+    universe_patients = open(arguments.universe, "r").readlines()
+  else:
+    universe_patients = False 
 
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir) 
-  kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp)
+  kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=universe_patients)
   generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
   export_all_atoms(kb_as, base_results_dir)
   print("Done {}".format(datetime.now()))

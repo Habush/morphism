@@ -24,9 +24,8 @@ def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=Fals
         atomspace = AtomSpace()
         initialize_opencog(atomspace)
         scheme_eval(atomspace, "(use-modules (opencog persist-file))")
-        attractions = ["attraction-links.scm", "attraction-links-genes.scm"]
         for i in os.listdir(data_dir):
-            if i in attractions:
+            if i.endswith(".scm"):
                 scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
 
       property_vectors = build_property_vectors(atomspace, data_dir, node_type)
@@ -35,17 +34,15 @@ def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=Fals
 
 def build_property_vectors(atomspace, data_dir, node_type):
   print("--- Building property vectors")
-  property_vectors = {}
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
-  main_nodes = atomspace.get_atoms_by_type(getattr(types, node_type))
   index_mapping = dict(zip(range(len(ppty)), ppty))
 
   property_df = pd.DataFrame([], columns=["patient_ID"] + list(index_mapping.keys()))
-  print("Number of {}:{}".format(node_type, len(main_nodes)))
+  print("Number of {}: {}".format(node_type, len(atomspace.get_atoms_by_type(getattr(types, node_type)))))
   print("Number of properties: {}".format(len(ppty)))
   for node in nodes:
-    if node.out[0] in main_nodes or node in main_nodes:
+    if node.type_name == node_type or node.out[0].type_name == node_type:
       p_vec = []
       for pt in ppty:
           if pt.atomspace.is_link_in_atomspace(types.AttractionLink, [node, pt]):
@@ -53,32 +50,31 @@ def build_property_vectors(atomspace, data_dir, node_type):
               attraction_tv = attraction.tv
               # weighted product, to give more weight to the strength s^p * c^(T-p)
               # with p = 1.5 and T = 2
-              wp = attraction.tv.mean**1.5 * attraction.tv.confidence**(0.5)
+              p, T = 1.5, 2
+              wp = attraction.tv.mean**p * attraction.tv.confidence**(T-p)
               p_vec.append(wp)
           else:
               p_vec.append(0.0)
 
       if sum(p_vec) != 0:
-        property_df.loc[len(property_df),:] = [node.out[0].name] + p_vec
+        node_name = node.out[0].name if node.type_name == "SetLink" else node.name 
+        property_df.loc[len(property_df),:] = [node_name] + p_vec
       else:
         zerovector.append(str(node))
         continue
+
   # normalize the vector
   for c in index_mapping.keys():
     property_df[c] = property_df[c] / max(property_df[c])
 
-  # Dump the vector in CSV format (before applying kpca)
+  # Dump the property vector to CSV (before applying kpca)
   property_vector_pickle_beforekpca = os.path.join(data_dir, 
             "property_vector_beforekpca_{}.csv".format(str(date.today())))
   property_df.to_csv(property_vector_pickle_beforekpca, sep="\t", index=False)
 
-  #compress matrix and return dic
-  for i,j in enumerate(property_df["patient_ID"]):
-    property_vectors[j] = sparse.csr_matrix(property_df.loc[i,index_mapping.keys()].values.tolist())
+  return property_df
 
-  return property_vectors
-
-def do_kpca(property_vectors):
+def do_kpca(property_vectors_df):
   def kernel_func(X):
     len_x = X.shape[0]
     dist_array = numpy.random.random((len_x, len_x)).astype(numpy.float16) * 0 - 1.0
@@ -110,27 +106,30 @@ def do_kpca(property_vectors):
 
   print("--- Doing KPCA")
 
-  X = sparse.vstack(property_vectors.values())
+  # Compress the vector dataframe to dict
+  property_vectors_dict = {}
+  for i,j in enumerate(property_vectors_df["patient_ID"]):
+    property_vectors_dict[j] = sparse.csr_matrix(property_vectors_df.loc[i,property_vectors_df.columns[1:]].values.tolist())
+
+  X = sparse.vstack(property_vectors_dict.values())
   X_kpca = KernelPCA(kernel = "precomputed").fit_transform(kernel_func(X))
 
-  for k, kpca_v in zip(property_vectors.keys(), X_kpca):
-    property_vectors[k] = kpca_v
-  return property_vectors
+  for k, kpca_v in zip(property_vectors_dict.keys(), X_kpca):
+    property_vectors_dict[k] = kpca_v
+  return property_vectors_dict
 
 def export_property_vectors(data_dir, property_vectors):
-    property_vector_pickle = os.path.join(data_dir, 
-            "property_vector_pickle_{}.pkl".format(str(date.today())))
+  output_file = os.path.join(data_dir, 
+          "property_vector_afterkpca_{}.csv".format(str(date.today())))
 
-    print("--- Exporting property vectors to \"{}\"".format(property_vector_pickle))
-    print(len(property_vectors.keys()))
+  print("--- Exporting property vectors to \"{}\"".format(output_file))
 
-    with open(property_vector_pickle, "wb") as f:
-        pickle.dump(property_vectors, f)
+  dict_to_csv(property_vectors).to_csv(output_file, sep="\t")
 
-    if len(zerovector) > 0:
-      print(len(zerovector))
-      with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
-        z.write("\n".join(zerovector))
+  if len(zerovector) > 0:
+    print(len(zerovector))
+    with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
+      z.write("\n".join(zerovector))
 
 def tanimoto(v1, v2):
   v1_v2 = numpy.dot(v1, v2)
