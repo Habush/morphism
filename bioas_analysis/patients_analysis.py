@@ -175,7 +175,7 @@ if __name__ == "__main__":
   else:
     filterbp = False
   if arguments.universe:
-    universe_patients = open(arguments.universe, "r").readlines()
+    universe_patients = open(arguments.universe, "r").read().splitlines()
   else:
     universe_patients = False 
 
