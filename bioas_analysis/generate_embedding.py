@@ -124,7 +124,7 @@ def export_property_vectors(data_dir, property_vectors):
 
   print("--- Exporting property vectors to \"{}\"".format(output_file))
 
-  dict_to_csv(property_vectors).to_csv(output_file, sep="\t")
+  dict_to_csv(property_vectors).to_csv(output_file, sep="\t",index=False)
 
   if len(zerovector) > 0:
     print(len(zerovector))
