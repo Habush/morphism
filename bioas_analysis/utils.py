@@ -7,6 +7,7 @@ from opencog.scheme import scheme_eval
 from opencog.type_constructors import *
 from opencog.utilities import initialize_opencog
 import pandas as pd
+import numpy as np
 import sys
 
 log.set_level("ERROR")
@@ -86,3 +87,20 @@ def splitDataFrameListtocol(df,target_column):
     df2 = pd.DataFrame(data_expanded, columns=range(len(data_expanded[0])))
 
     return pd.concat([new_df, df2], axis=1)
+
+def quantile_normalize(df):
+    patient_id = df["patient_ID"]
+    df = df.drop("patient_ID", axis=1)
+    """
+    input: dataframe with numerical columns
+    output: dataframe with quantile normalized values
+    """
+    df_sorted = pd.DataFrame(np.sort(df.values,
+                                     axis=0), 
+                             index=df.index, 
+                             columns=df.columns)
+    df_mean = df_sorted.mean(axis=1)
+    df_mean.index = np.arange(1, len(df_mean) + 1)
+    df_qn =df.rank(method="min").stack().astype(int).map(df_mean).unstack()
+    df_qn["patient_ID"] = patient_id
+    return(df_qn)
