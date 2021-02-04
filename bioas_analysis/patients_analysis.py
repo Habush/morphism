@@ -158,6 +158,12 @@ def parse_args():
                         help='filter biological process only')
     parser.add_argument('--universe', type=str, default='',
                         help='Text file containing list of patients to do embedding for (train or test sets)')
+    parser.add_argument('--norm', type=str, default='',
+                        help='Type of normalization none, scale, standard or quantile')
+    parser.add_argument('--p', type=str, default='',
+                        help='The value for p in the weight product s^p * c^(T-p)')
+    parser.add_argument('--T', type=str, default='',
+                        help='The value for T in the weight product s^p * c^(T-p)')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -178,10 +184,22 @@ if __name__ == "__main__":
     universe_patients = open(arguments.universe, "r").read().splitlines()
   else:
     universe_patients = False 
+  if arguments.norm:
+    norm = arguments.norm
+  else:
+    norm = False 
+  if arguments.p:
+    p = float(arguments.p)
+  else:
+    p = 1.5 
+  if arguments.T:
+    T = float(arguments.T)
+  else:
+    T = 2
 
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir) 
   kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=universe_patients)
-  generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as)
+  generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm)
   export_all_atoms(kb_as, base_results_dir)
   print("Done {}".format(datetime.now()))

@@ -15,7 +15,7 @@ import pandas as pd
 
 zerovector = []
 
-def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=False):
+def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=False, p=1.5, T=2,normalization=False):
     if embedding_method == "FMBPV":
       if kb_atomspace:
         atomspace = kb_atomspace
@@ -28,11 +28,12 @@ def generate_embeddings(embedding_method, data_dir, node_type, kb_atomspace=Fals
             if i.endswith(".scm"):
                 scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
 
-      property_vectors = build_property_vectors(atomspace, data_dir, node_type)
+      property_vectors = build_property_vectors(atomspace, data_dir, node_type, p, T, normalization=normalization)
       property_vectors = do_kpca(property_vectors)
-      export_property_vectors(data_dir, property_vectors)
+      result = export_property_vectors(data_dir, property_vectors,p,T, normalization)
+      return result
 
-def build_property_vectors(atomspace, data_dir, node_type):
+def build_property_vectors(atomspace, data_dir, node_type, p, T, normalization=False):
   print("--- Building property vectors")
   ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
   nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
@@ -49,8 +50,7 @@ def build_property_vectors(atomspace, data_dir, node_type):
               attraction = AttractionLink(node, pt)
               attraction_tv = attraction.tv
               # weighted product, to give more weight to the strength s^p * c^(T-p)
-              # with p = 1.5 and T = 2
-              p, T = 1.5, 2
+              # with default p = 1.5 and T = 2
               wp = attraction.tv.mean**p * attraction.tv.confidence**(T-p)
               p_vec.append(wp)
           else:
@@ -64,12 +64,26 @@ def build_property_vectors(atomspace, data_dir, node_type):
         continue
 
   # normalize the vector
-  for c in index_mapping.keys():
-    property_df[c] = property_df[c] / max(property_df[c])
+  if normalization:
+    if normalization == "scaling":
+      for column_name in index_mapping.keys():
+        property_df[column_name] = property_df[column_name] / max(property_df[column_name])
+    elif normalization == "standard":
+      for column_name in index_mapping.keys():
+        column_mean = property_df[column_name].mean()
+        column_std = property_df[column_name].std()
+        if column_std == 0:
+          property_df = property_df.drop([column_name], axis=1)
+        else:
+          property_df[column_name] = (property_df[column_name] - column_mean) / column_std
+    else:
+      property_df = quantile_normalize(property_df)
 
   # Dump the property vector to CSV (before applying kpca)
+  if not normalization:
+    normalization = "notnormalized"
   property_vector_pickle_beforekpca = os.path.join(data_dir, 
-            "property_vector_beforekpca_{}.csv".format(str(date.today())))
+            "property_vector_beforekpca_p={},T={}_{}_{}.csv".format(p, T, normalization,str(date.today())))
   property_df.to_csv(property_vector_pickle_beforekpca, sep="\t", index=False)
 
   return property_df
@@ -109,7 +123,7 @@ def do_kpca(property_vectors_df):
   # Compress the vector dataframe to dict
   property_vectors_dict = {}
   for i,j in enumerate(property_vectors_df["patient_ID"]):
-    property_vectors_dict[j] = sparse.csr_matrix(property_vectors_df.loc[i,property_vectors_df.columns[1:]].values.tolist())
+    property_vectors_dict[j] = sparse.csr_matrix(property_vectors_df.loc[i,property_vectors_df.columns.drop("patient_ID")].values.tolist())
 
   X = sparse.vstack(property_vectors_dict.values())
   X_kpca = KernelPCA(kernel = "precomputed").fit_transform(kernel_func(X))
@@ -118,18 +132,22 @@ def do_kpca(property_vectors_df):
     property_vectors_dict[k] = kpca_v
   return property_vectors_dict
 
-def export_property_vectors(data_dir, property_vectors):
+def export_property_vectors(data_dir, property_vectors,p,T, normalization):
+  if not normalization:
+    normalization = "notnormalized"
   output_file = os.path.join(data_dir, 
-          "property_vector_afterkpca_{}.csv".format(str(date.today())))
+          "property_vector_afterkpca_p={},T={}_{}_{}.csv".format(p,T,normalization,str(date.today())))
 
   print("--- Exporting property vectors to \"{}\"".format(output_file))
 
-  dict_to_csv(property_vectors).to_csv(output_file, sep="\t",index=False)
+  df = dict_to_csv(property_vectors)
+  df.to_csv(output_file, sep="\t", index=False)
 
   if len(zerovector) > 0:
     print(len(zerovector))
     with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
       z.write("\n".join(zerovector))
+  return df
 
 def tanimoto(v1, v2):
   v1_v2 = numpy.dot(v1, v2)
