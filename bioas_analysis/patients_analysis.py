@@ -18,22 +18,8 @@ def preprocess(atomspace, universe):
     if e.tv.mean == 0:
       scheme_eval(atomspace,"(cog-delete {})".format(e))
 
-  # remove patients with no gene expression
-  filter_out = []
-  all_patients = atomspace.get_atoms_by_type(types.PatientNode)
-  with_geneexpression = set([x.out[1] for x in atomspace.get_atoms_by_type(types.EvaluationLink) if x.out[0].type == types.LazyExecutionOutputLink])
-  for p in all_patients:
-    if universe:
-      # remove patients not in the given universe set
-      if not p.name in universe:
-        scheme_eval(atomspace, "(cog-delete-recursive! {})".format(p))
-    if p not in with_geneexpression:
-      filter_out.append(str(p))
-      scheme_eval(atomspace, "(cog-delete-recursive! {})".format(p))
-  with open(base_results_dir + "filtered_out_patients.scm", "w") as f:
-    f.write("\n".join(filter_out))
-  
-  return len(with_geneexpression)
+  all_patients = atomspace.get_atoms_by_type(types.PatientNode)  
+  return len(all_patients)
 
 def apply_subset_rule1(atomspace):
   print("--- {} Inferring subsets, rule 1".format(datetime.now()))
@@ -119,7 +105,7 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace, base_results_dir):
   print("--- {} Exporting Atoms to files".format(datetime.now()))
-  result_scm = base_results_dir + "AttractionLinks-results.scm"
+  result_scm = base_results_dir + "AttractionLinks-results.scm.bc"
   att = atomspace.get_atoms_by_type(types.AttractionLink)
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
@@ -164,6 +150,8 @@ def parse_args():
                         help='The value for p in the weight product s^p * c^(T-p)')
     parser.add_argument('--T', type=str, default='',
                         help='The value for T in the weight product s^p * c^(T-p)')
+    parser.add_argument('--vec_space', type=str, default='',
+                        help='The initial vector space to use as a base')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -191,15 +179,26 @@ if __name__ == "__main__":
   if arguments.p:
     p = float(arguments.p)
   else:
-    p = 1.5 
+    p = 1
   if arguments.T:
     T = float(arguments.T)
   else:
     T = 2
+  if arguments.vec_space:
+    vec_space = pd.read_csv(arguments.vec_space, sep="\t")
+    test_dataset = True
+  else:
+    test_dataset = False
 
   if not os.path.exists(base_results_dir):
-    os.makedirs(base_results_dir) 
+    os.makedirs(base_results_dir)
+
   kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=universe_patients)
-  generate_embeddings("FMBPV",base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm)
-  export_all_atoms(kb_as, base_results_dir)
+  export_all_atoms(kb_as, base_results_dir) 
+
+  if test_dataset:
+    generate_embeddings(base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm, 
+                        test_data=True, vector_space=vec_space)  
+  else:
+    generate_embeddings(base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm)
   print("Done {}".format(datetime.now()))
