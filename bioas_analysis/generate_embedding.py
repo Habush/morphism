@@ -13,8 +13,10 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler, QuantileTransfor
 from datetime import date
 from utils import *
 import pandas as pd
+import re
 
 zerovector = []
+nodetypes = ["PredicateNode","BiologicalProcessNode", "ReactomeNode", "GeneNode","MolecularFunctionNode","CellularComponentNode","PharmGkbNode"]
 
 def generate_embeddings(data_dir, node_type, kb_atomspace=False, p=1, T=2,normalization=False,
                         test_data=False, vector_space=False):
@@ -25,12 +27,29 @@ def generate_embeddings(data_dir, node_type, kb_atomspace=False, p=1, T=2,normal
     atomspace = AtomSpace()
     initialize_opencog(atomspace)
     scheme_eval(atomspace, "(use-modules (opencog persist-file))")
-    for i in os.listdir(data_dir):
-        if i.endswith(".scm"):
-            scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, i))
+    scheme_eval(atomspace,"(load-file \"{}/{}\")".format(data_dir, "AttractionLinks-results.scm.bc"))
 
-  property_vectors = build_property_vectors(atomspace, data_dir, node_type, p, T, normalization=normalization, 
-                                            test_data=test_data, vector_space=vector_space)
+  if node_type == "Concept":
+    property_vectors_list = []
+    for n in nodetypes:
+      if n != "GeneNode":
+        property_vectors_list.append(build_property_vectors(atomspace, n, p, T))
+    property_vectors = pd.concat(property_vectors_list)
+  else:
+    property_vectors = build_property_vectors(atomspace, node_type, p, T)
+
+  # normalize the vector
+  if normalization:
+    if test_data:
+        property_vectors = normalize_df(property_vectors, normalization,test_data=True, train_data=vector_space)
+    else:
+        property_vectors = normalize_df(property_vectors, normalization)
+
+  # Dump the property vector to CSV (before applying kpca)
+  property_vector_beforekpca = os.path.join(data_dir, 
+            "property_vector_beforekpca_p={},T={}_{}_{}.csv".format(p, T, normalization if normalization else "notnormalized",str(date.today())))
+  property_vectors.to_csv(property_vector_beforekpca, sep="\t", index=False)
+  
   if test_data:
     # Patients in the test or training might not have all attributes, fill missing ones with 0
     if len(property_vectors.columns) < len(vector_space.columns):
@@ -50,13 +69,32 @@ def generate_embeddings(data_dir, node_type, kb_atomspace=False, p=1, T=2,normal
   result = export_property_vectors(data_dir, embedding_vector,p,T, normalization)
   return result
 
-def build_property_vectors(atomspace, data_dir, node_type, p, T, normalization=False,test_data=False, vector_space=False):
-  print("--- Building property vectors")
-  ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
-  nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
-  ppty_mapping = dict(zip(range(len(ppty)), [str(i) for i in ppty]))
+def get_node(satLink, abs_ge=False):
+    nodes = re.findall('\(.*?\)',satLink)
+    if nodes:
+      for i in nodes:
+        if any(a in i for a in nodetypes):
+            result = i
+            break
+      postfix = ""
+      if "overexpression" in satLink:
+          postfix = "_overexp"
+      elif "underexpression" in satLink:
+          postfix = "_underexp"
+      if abs_ge:
+          postfix = ""
+      result = "{}{}".format(re.findall('"([^"]*)"', result)[0], postfix)
+    else:
+      result = satLink
+    return result
 
-  property_df = pd.DataFrame([], columns=["patient_ID"] + list(ppty_mapping.keys()))
+def build_property_vectors(atomspace, node_type, p, T):
+  print("--- Building property vectors for {}".format(node_type))
+  ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
+  nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink) if node_type in str(i.out[0])])
+  ppty_mapping = [get_node(str(i)) for i in ppty]
+
+  property_df = pd.DataFrame([], columns=["patient_ID"] + ppty_mapping)
   print("Number of {}: {}".format(node_type, len(atomspace.get_atoms_by_type(getattr(types, node_type)))))
   print("Number of properties: {}".format(len(ppty)))
   for node in nodes:
@@ -79,26 +117,12 @@ def build_property_vectors(atomspace, data_dir, node_type, p, T, normalization=F
       else:
         zerovector.append(str(node))
         continue
-
-  # normalize the vector
-  if normalization:
-    if test_data:
-        property_df = normalize_df(property_df, normalization,test_data=True, train_data=vector_space)
-    else:
-        property_df = normalize_df(property_df, normalization)
-
-  # Dump the property vector to CSV (before applying kpca)
-  property_vector_pickle_beforekpca = os.path.join(data_dir, 
-            "property_vector_beforekpca_p={},T={}_{}_{}.csv".format(p, T, normalization if normalization else "notnormalized",str(date.today())))
-  property_df.to_csv(property_vector_pickle_beforekpca, sep="\t", index=False)
-  filehandler = open(os.path.join(data_dir, "ppty_mapping_{}".format(normalization if normalization else "notnormalized")), 'wb')
-  pickle.dump(ppty_mapping, filehandler)
   return property_df
 
 def normalize_df(property_df, normalization, test_data=False, train_data=False):
   cols = property_df.columns.drop("patient_ID")
   if test_data:
-    train_data = train_data.drop("patient_ID")
+    train_data = train_data.drop("patient_ID", axis=1)
   if normalization == "scaling":
     scaler = MinMaxScaler()
     if test_data:
@@ -114,83 +138,13 @@ def normalize_df(property_df, normalization, test_data=False, train_data=False):
     else:
       property_df[cols] = scaler.fit_transform(property_df[cols])
   else:
-    qt = QuantileTransformer(n_quantiles=5, random_state=0, output_distribution="normal")
+    qt = QuantileTransformer(n_quantiles=5, random_state=0)
     if test_data:
       qt.fit(train_data)
       property_df[cols] = qt.transform(property_df[cols])
     else:
       property_df[cols] = qt.fit_transform(property_df[cols])
   return property_df
-
-def do_kpca(property_vectors_df, test_data=False, vector_space=False, n_components=150, tan_dist=False):
-  def kernel_func(X, Y):
-    X = sparse.vstack(X.values())
-    Y = sparse.vstack(Y.values())
-    len_x = X.shape[0]
-    len_y = Y.shape[0]
-    dist_array = numpy.random.random((len_x, len_y)).astype(numpy.float16) * 0 - 1.0
-    i = 0
-    for a in X:
-      a = a.toarray().flatten()
-      j = 0
-      for b in Y:
-        b = b.toarray().flatten()
-        if tan_dist:
-          dist = tanimoto_kernel(a, b)
-        else:
-          dist = tanimoto(a, b)
-        dist_array[i, j] = dist
-        j += 1
-      i += 1
-    return dist_array
-
-  print("--- Doing KPCA")
-  kpca = KernelPCA(kernel = "precomputed", n_components=n_components)
-  property_vectors_dict = compress_df(property_vectors_df)
-  if test_data:
-    print("Train data:{}, Test data:{}".format(vector_space.shape, property_vectors_df.shape))
-    train_data = compress_df(vector_space)
-    train_space = kernel_func(train_data, train_data)
-    # Fit with train data and do just transform on test
-    kpca.fit(train_space)
-    test_space = kernel_func(property_vectors_dict, train_data)
-    print("--- Test data : {}".format(test_space.shape))
-    result_kpca = kpca.transform(test_space)
-
-  else:
-    result_kpca = kpca.fit_transform(kernel_func(property_vectors_dict, property_vectors_dict))
- 
-  for k, kpca_v in zip(property_vectors_dict.keys(), result_kpca):
-    property_vectors_dict[k] = kpca_v
-  return dict_to_df(property_vectors_dict)
-
-def dict_to_df(res_dict):
-  df = pd.DataFrame(res_dict.values())
-  df["patient_ID"] = res_dict.keys()
-  return df
-
-def compress_df(df):
-  # Compress the dataframe (sparse matrix) to dict
-  vectors_dict = {}
-  for i,j in enumerate(df["patient_ID"]):
-    vectors_dict[j] = sparse.csr_matrix(df.loc[i,df.columns.drop("patient_ID")].values.tolist())
-  return vectors_dict
-
-def export_property_vectors(data_dir, property_vectors,p,T, normalization):
-  if not normalization:
-    normalization = "notnormalized"
-  output_file = os.path.join(data_dir, 
-          "property_vector_afterkpca_p={},T={}_{}_{}.csv".format(p,T,normalization,str(date.today())))
-
-  print("--- Exporting property vectors to \"{}\"".format(output_file))
-
-  property_vectors.to_csv(output_file, sep="\t", index=False)
-
-  if len(zerovector) > 0:
-    print(len(zerovector))
-    with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
-      z.write("\n".join(zerovector))
-  return property_vectors
 
 def tanimoto(v1, v2):
   v1_v2 = numpy.dot(v1, v2)
@@ -206,3 +160,36 @@ def tanimoto_kernel(v1, v2):
     g = (v1_norm + v2_norm + v1_v2_norm)
     result = f / g
     return result
+
+def intensional_similarity(v1, v2):
+  result = sum(min(v1, v2))/sum(max(v1, v2))
+  return result
+
+def do_kpca(property_vectors_df, test_data=False, vector_space=False, n_components=150, kernel=tanimoto):
+  print("--- Doing KPCA")
+  kpca = KernelPCA(kernel=kernel, n_components=n_components)
+  if test_data:
+    print("Train data:{}, Test data:{}".format(vector_space.shape, property_vectors_df.shape))
+    # Fit with train data and do just transform on test
+    kpca.fit(vector_space.drop("patient_ID", axis=1))
+    result_kpca = kpca.transform(property_vectors_df.drop("patient_ID", axis=1))
+
+  else:
+    result_kpca = kpca.fit_transform(property_vectors_df.drop("patient_ID", axis=1))
+ 
+  result_df = pd.DataFrame(result_kpca)
+  result_df["patient_ID"] = property_vectors_df["patient_ID"]
+  return result_df
+
+def export_property_vectors(data_dir, property_vectors,p,T, normalization):
+  if not normalization:
+    normalization = "notnormalized"
+  output_file = os.path.join(data_dir, 
+          "embedding_vector_p={},T={}_{}_{}.csv".format(p,T,normalization,str(date.today())))
+  print("--- Exporting property vectors to \"{}\"".format(output_file))
+  property_vectors.to_csv(output_file, sep="\t", index=False)
+  if len(zerovector) > 0:
+    print(len(zerovector))
+    with open(os.path.join(data_dir , "zerovector.txt"), "w") as z:
+      z.write("\n".join(zerovector))
+  return property_vectors
