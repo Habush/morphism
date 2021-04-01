@@ -110,7 +110,7 @@ def export_all_atoms(atomspace, base_results_dir):
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
 
-def generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=False):
+def generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=False, train_as=False):
     ### Initialize the AtomSpace ###
     atomspace = AtomSpace()
     initialize_opencog(atomspace)
@@ -123,6 +123,10 @@ def generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=False
     """)
 
     populate_atomspace(atomspace,base_datasets_dir)
+    if train_as:
+      test_patients = atomspace.get_atoms_by_type(types.PatientNode)
+      print("Loading Train atomspace")
+      populate_atomspace(atomspace,train_as)    
     total_patients = preprocess(atomspace, universe)
     if filterbp:
       print("--- {} Filtering BP".format(datetime.now()))
@@ -132,6 +136,11 @@ def generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=False
     apply_subset_rule2(atomspace)
     remove_processed_subsets(atomspace)
     generate_attraction_links(atomspace)
+    if train_as:
+      # After AttractionLinks generated, Remove train patients from the atomspace
+      for p in atomspace.get_atoms_by_type(types.PatientNode):
+        if not p in test_patients:
+          scheme_eval(atomspace,"(cog-delete-recursive! {})".format(p))
     return atomspace
 
 def parse_args():
@@ -152,6 +161,8 @@ def parse_args():
                         help='The value for T in the weight product s^p * c^(T-p)')
     parser.add_argument('--vec_space', type=str, default='',
                         help='The initial vector space to use as a base')
+    parser.add_argument('--train_as', type=str, default='',
+                        help='Train atomspace files')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -189,11 +200,15 @@ if __name__ == "__main__":
     test_dataset = True
   else:
     test_dataset = False
+  if arguments.train_as:
+    train_as = arguments.train_as
+  else:
+    train_as = False
 
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir)
 
-  kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=universe_patients)
+  kb_as = generate_atoms(base_results_dir, base_datasets_dir, filterbp, universe=universe_patients, train_as=train_as)
   export_all_atoms(kb_as, base_results_dir) 
 
   if test_dataset:
