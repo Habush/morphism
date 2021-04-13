@@ -163,6 +163,8 @@ def parse_args():
                         help='The initial vector space to use as a base')
     parser.add_argument('--train_as', type=str, default='',
                         help='Train atomspace files')
+    parser.add_argument('--abs', type=bool, default=False,
+                        help='Absolute Gene expression or relative median norm')
     return parser.parse_args()
 
 if __name__ == "__main__":
@@ -204,6 +206,10 @@ if __name__ == "__main__":
     train_as = arguments.train_as
   else:
     train_as = False
+  if arguments.abs:
+    abs_ge = arguments.abs
+  else:
+    abs_ge = False
 
   if not os.path.exists(base_results_dir):
     os.makedirs(base_results_dir)
@@ -213,7 +219,7 @@ if __name__ == "__main__":
 
   if test_dataset:
     generate_embeddings(base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm, 
-                        test_data=True, vector_space=vec_space)  
+                        test_data=True, vector_space=vec_space, abs_ge=abs_ge)  
   else:
-    generate_embeddings(base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm)
+    generate_embeddings(base_results_dir,"PatientNode", kb_atomspace=kb_as, p=p, T=T, normalization=norm, abs_ge=abs_ge)
   print("Done {}".format(datetime.now()))
