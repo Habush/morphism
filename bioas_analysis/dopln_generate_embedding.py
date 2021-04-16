@@ -73,7 +73,8 @@ if __name__ == "__main__":
                 abs_ge = True
                 if not args.scaled:
                     data = normalize_df(data, "scaling")
-                data.columns = ["{}_overexpr".format(i) for i in data.columns if i != "patient_ID"]
+                data.columns = ["{}_overexpr".format(i) for i in data.columns]
+                data.rename({'patient_ID_overexpr': 'patient_ID'}, axis=1, inplace=True)
                 qnormalized_atomse(data, f1, f2, genes_list)
     print("--- Doing PLN inference")
     if abs_ge:
