@@ -113,12 +113,12 @@ def qnormalized_atomse(df, overexpr_fp, underexpr_fp, genes):
                 underexpr_stv = df.iloc[i]["{}_underexpr".format(g)]
                 create_schemanode(g, patient, False, underexpr_fp, underexpr_stv)
             except:
-                print("No under expression value for gene {}".format(g))
+                pass
             try:    
                 overexpr_stv = df.iloc[i]["{}_overexpr".format(g)]
                 create_schemanode(g, patient, True,overexpr_fp, overexpr_stv)
             except:
-                print("No Over expression value for gene {}".format(g))
+                pass
 
 def parse_args():
     parser = argparse.ArgumentParser(description="convert clinical trial patient data to atomese")

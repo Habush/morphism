@@ -105,7 +105,7 @@ def remove_processed_subsets(atomspace):
 
 def export_all_atoms(atomspace, base_results_dir):
   print("--- {} Exporting Atoms to files".format(datetime.now()))
-  result_scm = base_results_dir + "AttractionLinks-results.scm.bc"
+  result_scm = os.path.join(base_results_dir, "AttractionLinks-results.scm.bc")
   att = atomspace.get_atoms_by_type(types.AttractionLink)
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
