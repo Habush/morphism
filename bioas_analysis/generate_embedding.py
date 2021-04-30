@@ -88,15 +88,16 @@ def get_node(satLink, abs_ge=False):
 
 def build_property_vectors(atomspace, node_type, p, T, abs_ge):
   print("--- Building property vectors")
-  ppty = set([i.out[1] for i in atomspace.get_atoms_by_type(types.AttractionLink) if i.out[1].type_name != "VariableNode"])
-  nodes = set([i.out[0] for i in atomspace.get_atoms_by_type(types.AttractionLink)])
+  links_to_check = atomspace.get_atoms_by_type(types.AttractionLink) + atomspace.get_atoms_by_type(types.IntensionalSimilarityLink)
+  ppty = set([i.out[1] for i in links_to_check if not "VariableNode" in str(i)])
+  nodes = set([i.out[0] for i in links_to_check])
   print("Number of {}: {}".format(node_type, len(nodes)))
   print("Number of properties: {}".format(len(ppty)))
   property_df = pd.DataFrame(numpy.zeros((len(nodes), len(ppty))), columns=ppty)
   node_ID = "patient_ID" if node_type == "PatientNode" else "node_ID"
   property_df[node_ID] = nodes
   property_df = property_df.set_index(node_ID)
-  for att_link in atomspace.get_atoms_by_type(types.AttractionLink):
+  for att_link in links_to_check:
     node = att_link.out[0]
     pt = att_link.out[1]
     attraction_tv = att_link.tv
