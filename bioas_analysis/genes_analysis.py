@@ -94,7 +94,7 @@ def export_result(datapath, atomspace):
   with open(result_scm, "w") as f:
     f.write("\n".join([str(a) for a in att]))
 
-def generate_links_genes(datapath, doinhrule=False):
+def generate_links_genes(datapath, doinhrule=False, genes=False):
   ### Initialize the AtomSpace ###
   atomspace = AtomSpace()
   initialize_opencog(atomspace)
@@ -103,6 +103,10 @@ def generate_links_genes(datapath, doinhrule=False):
   scheme_eval(atomspace, "(use-modules (opencog) (opencog exec) (opencog logger) (opencog bioscience) (opencog ure) (opencog pln) (opencog persist-file) (srfi srfi-1))")
   # scheme_eval(atomspace, """(ure-logger-set-level! "debug")""")
   load_atomspace(datapath, atomspace)
+  if genes:
+    for g in atomspace.get_atoms_by_type(types.GeneNode):
+      if not g.name in genes:
+        scheme_eval(atomspace,"(cog-delete-recursive! {})".format(g))
   if doinhrule:
     infer_subsets(atomspace)
   calculate_truth_values(atomspace) # for the memberlink and GO
@@ -121,6 +125,8 @@ def parse_args():
                         help='path to store the output files')
     parser.add_argument('--doinhrule', type=bool, default=False,
                         help='Apply inheritance rule and Propagate the memberlinks relationship to the parent GO')
+    parser.add_argument('--genes', type=str, default='',
+                        help='Text file with list of gene names to generate embedding for')
     return parser.parse_args()
 
 if __name__=="__main__":
@@ -137,6 +143,10 @@ if __name__=="__main__":
     doinhrule = True
   else:
     doinhrule = False
-  kbs = generate_links_genes(base_datasets_dir, doinhrule=doinhrule)
+  if arguments.genes:
+    genes = open(arguments.genes,"r").read().splitlines()
+  else:
+    genes = False
+  kbs = generate_links_genes(base_datasets_dir, doinhrule=doinhrule, genes=genes)
   export_result(base_results_dir, kbs)
   generate_embeddings(base_results_dir,"GeneNode", kb_atomspace=kbs)
