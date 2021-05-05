@@ -106,7 +106,7 @@ def generate_links_genes(datapath, doinhrule=False, genes=False):
   if genes:
     for g in atomspace.get_atoms_by_type(types.GeneNode):
       if not g.name in genes:
-        scheme_eval(atomspace,"(cog-delete-recursive! {})".format(g))
+        scheme_eval(atomspace,"(cog-extract-recursive! {})".format(g))
   if doinhrule:
     infer_subsets(atomspace)
   calculate_truth_values(atomspace) # for the memberlink and GO
