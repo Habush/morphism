@@ -11,9 +11,6 @@
          (Y (gdr LINK-1))
          (XY-2 (LINK-TYPE-2 X Y)))
     (Bind
-      (VariableList
-        (TypedVariable X VAR-TYPE)
-        (TypedVariable Y VAR-TYPE))
       (Present
         LINK-1)
       XY-2)))

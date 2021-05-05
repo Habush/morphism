@@ -20,8 +20,6 @@
          (XZ (LINK-TYPE X Z)))
     (Bind
       (VariableList
-        (TypedVariable X VAR-TYPE)
-        (TypedVariable Y VAR-TYPE)
         (TypedVariable Z VAR-TYPE))
       (And
         (Present
@@ -31,7 +29,7 @@
       XZ)))
 
 (define-public (gen-present-mixed-link-transitivity-rule LINK-1 LINK-TYPE-1 LINK-TYPE-2
-                                                  X-TYPE Y-TYPE Z-TYPE)
+                                                 Z-TYPE)
   (let* ((X (gar LINK-1))
          (Y (gdr LINK-1))
          (Z (Variable "$Z"))
@@ -39,8 +37,6 @@
          (XZ (LINK-TYPE-1 X Z)))
     (Bind
       (VariableList
-        (TypedVariable X X-TYPE)
-        (TypedVariable Y Y-TYPE)
         (TypedVariable Z Z-TYPE))
       (And
         (Present
@@ -75,7 +71,7 @@
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
                   (gen-present-mixed-link-transitivity-rule ln LINK-1-TYPE LINK-2-TYPE
-                    GeneT ConceptT ConceptT)) (cdr batch))) batches)
+                    ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (take-custom lst n)
