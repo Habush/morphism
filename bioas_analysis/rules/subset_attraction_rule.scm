@@ -1,3 +1,6 @@
+(use-modules (ice-9 threads))
+(use-modules (srfi srfi-1))
+
 ;; =============================================================================
 ;; Attraction introduction rule 
 ;;
@@ -23,13 +26,9 @@
 ;; where s(B) is the prior of B and x+ is the positive part of x. For
 ;; now the prior of B is 1.
 
-(define (subset-attraction-rule TYPE1 TYPE2)
-  (let* ((A (Variable "$A"))
-         (B (Variable "$B")))
+(define (subset-attraction-rule A)
+  (let* ((B (Variable "$B")))
     (BindLink
-      (VariableSet
-        (TypedVariable A TYPE1)
-        (TypedVariable B TYPE2))
       (Present
         (Subset (Set A) B)
         (Subset (Not (Set A)) B))
@@ -68,3 +67,31 @@
   (DefinedSchemaNode "subset-attraction-genes-rule"))
 (DefineLink subset-attraction-genes-rule-name
   subset-attraction-genes-rule)
+
+(define-public (create-attr-lns TYPE)
+    ;; get patient atoms and run the deduction in batch
+    (cog-logger-info "Generating Attraction Links")
+    ;;apply fc to get the relationship between go's and patients
+    (let* ((atoms (cog-get-atoms TYPE))
+            (batch-num 0)
+            (batch-size (/ (len genes) (current-processor-count)))
+            (batch-ls (split-lst genes batch-size))
+            (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
+        
+        (n-par-for-each (current-processor-count)  (lambda (batch)
+              (for-each (lambda (a)
+                  (subset-attraction-rule a)) batch)) batches)
+        (cog-logger-info "Done!")))
+
+(define-public (take-custom lst n)
+    (if (< (length lst) n)
+        (take lst (length lst))
+        (take lst n)))
+
+(define-public (drop-custom lst n)
+    (if (< (length lst) n)
+        (drop lst (length lst))
+        (drop lst n)))
+(define-public (split-lst lst n)
+    (if (null? lst) '()
+        (cons (take-custom lst n) (split-lst (drop-custom lst n) n))))
