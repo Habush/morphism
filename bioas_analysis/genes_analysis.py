@@ -14,17 +14,8 @@ def load_atomspace(datapath, atomspace):
 
 def generate_subsets(atomspace):
   print("--- Infer subsets between gene singletons and concepts")
-  scheme_eval(atomspace, "(pln-load 'empty)")
-  scheme_eval(atomspace, "(pln-load-from-path \"rules/subset-genes-rule.scm\")")
-  scheme_eval(atomspace, "(pln-add-rule \"subset-genes-rule\")")
-  scheme_eval(atomspace, " ".join([
-    "(pln-bc (SubsetLink (Set (Variable \"$X\")) (Variable \"$Y\"))",
-    "#:vardecl",
-        "(VariableSet",
-        "(TypedVariable (Variable \"$X\") (Type \"GeneNode\"))",
-        "(TypedVariable (Variable \"$Y\") (TypeInh \"ConceptNode\")))",
-    "#:maximum-iterations 12",
-    "#:complexity-penalty 10)"]))
+  scheme_eval(atomspace, "(load-from-path \"rules/subset-genes-rule.scm\")")
+  scheme_eval(atomspace, "(create-subset-lns 'GeneNode)")
 
 def gene_singleton_tv(atomspace):
     print("--- Assign TV for gene singletons")
@@ -38,19 +29,8 @@ def gene_singleton_tv(atomspace):
 def infer_negation(atomspace):
   print("--- Inferring Subset Negation")
   # (Subset (Set A) B) |- (Subset (Not (Set A) B))
-  target = """
-    (Subset
-      (Not (Set (Variable "$X")))
-        (Variable "$Y"))"""
-  bc = """
-    (pln-bc 
-      {}
-      #:maximum-iterations 2
-      #:complexity-penalty 10)"""
-  scheme_eval(atomspace, "(pln-load 'empty)")
-  scheme_eval(atomspace, "(pln-load-from-path \"rules/subset_negation_rule.scm\")")
-  scheme_eval(atomspace, "(pln-add-rule \"subset-condition-negation-genes-rule\")")
-  scheme_eval(atomspace, bc.format(target))
+  scheme_eval(atomspace, "(load-from-path \"rules/subset_negation_rule.scm\")")
+  scheme_eval(atomspace, "(create-subset-neg-lns 'GeneNode)")
 
 def infer_attractions(atomspace):
   print("--- Inferring AttractionLinks")
