@@ -24,7 +24,7 @@
     ;;apply fc to get the relationship between go's and patients
     (let* ((atoms (cog-get-atoms 'InheritanceLink))
             (batch-num 0)
-            (batch-size (/ (len genes) (current-processor-count)))
+            (batch-size (/ (length genes) (current-processor-count)))
             (batch-ls (split-lst genes batch-size))
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
