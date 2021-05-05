@@ -25,14 +25,15 @@ def partof_to_inheritance(atomspace):
 
 def infer_subsets(atomspace):
   print("--- Inferring subsets and new members")
+  scheme_eval(atomspace, "(add-to-load-path \".\")")
   scheme_eval(atomspace, "(load-from-path \"rules/translation.scm\")")
   scheme_eval(atomspace, "(load-from-path \"rules/transitivity.scm\")")
   # (Inheritance C1 C2) |- (Subset C1 C2)
   scheme_eval(atomspace, "(inheritance->subset)")
   # (Subset C1 C2) (Subset C2 C3) |- (Subset C1 C3)
-  scheme_eval(atomspace, "(gen-present-link-transitivity SubsetLink)")
+  scheme_eval(atomspace, "(gen-present-link-transitivity 'SubsetLink)")
   # (Member G C1) (Subset C1 C2) |- (Member G C2)
-  scheme_eval(atomspace, "(gen-present-mixed-link-transitivity MemberLink SubsetLink)")
+  scheme_eval(atomspace, "(gen-present-mixed-link-transitivity 'MemberLink 'SubsetLink)")
 
 def calculate_truth_values(atomspace):
   print("--- Calculating Truth Values")

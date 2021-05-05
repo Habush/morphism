@@ -46,7 +46,7 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (a)
-                  (subset-genes-rule a)) batch)) batches)
+                  (subset-genes-rule a)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (take-custom lst n)

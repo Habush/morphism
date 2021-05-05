@@ -30,7 +30,7 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
-                  (gen-present-link-translation-rule ln SubsetLink ConceptT)) batch)) batches)
+                  (gen-present-link-translation-rule ln SubsetLink ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (take-custom lst n)

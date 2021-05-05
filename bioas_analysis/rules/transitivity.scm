@@ -59,7 +59,7 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
-                  (gen-present-link-transitivity-rule ln TYPE ConceptT)) batch)) batches)
+                  (gen-present-link-transitivity-rule ln TYPE ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (gen-present-mixed-link-transitivity LINK-1-TYPE LINK-2-TYPE)
@@ -75,7 +75,7 @@
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
                   (gen-present-mixed-link-transitivity-rule ln LINK-1-TYPE LINK-2-TYPE
-                    GeneT ConceptT ConceptT)) batch)) batches)
+                    GeneT ConceptT ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (take-custom lst n)

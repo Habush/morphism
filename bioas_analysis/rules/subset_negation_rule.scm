@@ -60,7 +60,7 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (a)
-                  (subset-condition-negation a)) batch)) batches)
+                  (subset-condition-negation a)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
 (define-public (take-custom lst n)

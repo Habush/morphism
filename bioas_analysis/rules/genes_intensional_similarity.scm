@@ -176,7 +176,7 @@
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (gene-a)
                   (for-each (lambda (gene-b)
-                    (genes-intensional-similarity-rule gene-a gene-b)) genes)) batch)
+                    (genes-intensional-similarity-rule gene-a gene-b)) genes)) (cdr batch))
 ) batches)
         (cog-logger-info "Done!")))
 
