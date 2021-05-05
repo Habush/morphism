@@ -24,12 +24,13 @@ def partof_to_inheritance(atomspace):
       scheme_eval(atomspace, "(InheritanceLink {} {})".format(lst[1], lst[0]))
 
 def infer_subsets(atomspace):
-  print("--- Inferring subsets and new members")
   scheme_eval(atomspace, "(add-to-load-path \".\")")
   scheme_eval(atomspace, "(load-from-path \"rules/translation.scm\")")
   scheme_eval(atomspace, "(load-from-path \"rules/transitivity.scm\")")
   # (Inheritance C1 C2) |- (Subset C1 C2)
+  print("--- Applying Translation Rule")
   scheme_eval(atomspace, "(inheritance->subset)")
+  print("--- Applying Transitivity Rules")
   # (Subset C1 C2) (Subset C2 C3) |- (Subset C1 C3)
   scheme_eval(atomspace, "(gen-present-link-transitivity 'SubsetLink)")
   # (Member G C1) (Subset C1 C2) |- (Member G C2)
