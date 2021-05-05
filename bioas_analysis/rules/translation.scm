@@ -1,5 +1,3 @@
-(use-modules (ice-9 threads))
-(use-modules (srfi srfi-1))
 ;; Crisp rules about translating a link into another link
 
 ;; Helpers
