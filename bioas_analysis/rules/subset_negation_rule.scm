@@ -54,8 +54,8 @@
     (cog-logger-info "Generating Subset Negation Links")
     (let* ((atoms (cog-get-atoms TYPE))
             (batch-num 0)
-            (batch-size (/ (length genes) (current-processor-count)))
-            (batch-ls (split-lst genes batch-size))
+            (batch-size (/ (length atoms) (current-processor-count)))
+            (batch-ls (split-lst atoms batch-size))
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
         (n-par-for-each (current-processor-count)  (lambda (batch)

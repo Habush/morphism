@@ -33,7 +33,7 @@
 (define-public (gen-present-mixed-link-transitivity-rule LINK-1 LINK-TYPE-1 LINK-TYPE-2
                                                   X-TYPE Y-TYPE Z-TYPE)
   (let* ((X (gar LINK-1))
-         (Y (gdr LINK-2))
+         (Y (gdr LINK-1))
          (Z (Variable "$Z"))
          (YZ (LINK-TYPE-2 Y Z))
          (XZ (LINK-TYPE-1 X Z)))
@@ -53,8 +53,8 @@
     (cog-logger-info "Running gen-present-link-transitivity")
     (let* ((atoms (cog-get-atoms TYPE))
             (batch-num 0)
-            (batch-size (/ (length genes) (current-processor-count)))
-            (batch-ls (split-lst genes batch-size))
+            (batch-size (/ (length atoms) (current-processor-count)))
+            (batch-ls (split-lst atoms batch-size))
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
@@ -68,13 +68,13 @@
     ;;apply fc to get the relationship between go's and patients
     (let* ((atoms (cog-get-atoms LINK-1-TYPE))
             (batch-num 0)
-            (batch-size (/ (length genes) (current-processor-count)))
-            (batch-ls (split-lst genes batch-size))
+            (batch-size (/ (length atoms) (current-processor-count)))
+            (batch-ls (split-lst atoms batch-size))
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
-                  (gen-present-link-transitivity-rule ln LINK-1-TYPE LINK-2-TYPE
+                  (gen-present-mixed-link-transitivity-rule ln LINK-1-TYPE LINK-2-TYPE
                     GeneT ConceptT ConceptT)) batch)) batches)
         (cog-logger-info "Done!")))
 

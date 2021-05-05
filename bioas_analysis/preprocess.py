@@ -82,7 +82,7 @@ def generate_atoms():
 
     ### Guile setup ###
     scheme_eval(atomspace, "(add-to-load-path \".\")")
-    scheme_eval(atomspace, "(use-modules (opencog) (opencog bioscience) (opencog ure) (opencog pln) (opencog persist-file) (srfi srfi-1))")
+    scheme_eval(atomspace, "(use-modules (opencog) (opencog bioscience) (opencog ure) (opencog pln) (opencog logger) (opencog persist-file) (srfi srfi-1) (ice-9 threads))")
     scheme_eval(atomspace, " ".join([
     "(define (write-atoms-to-file file atoms)",
         "(define fp (open-output-file file))",

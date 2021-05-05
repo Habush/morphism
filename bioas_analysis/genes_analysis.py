@@ -58,7 +58,7 @@ def generate_links_genes(datapath, doinhrule=False, genes=False):
   initialize_opencog(atomspace)
 
   scheme_eval(atomspace, "(add-to-load-path \".\")")
-  scheme_eval(atomspace, "(use-modules (opencog) (opencog exec) (opencog logger) (opencog bioscience) (opencog ure) (opencog pln) (opencog persist-file) (srfi srfi-1))")
+  scheme_eval(atomspace, "(use-modules (opencog) (opencog exec) (opencog logger) (opencog bioscience) (opencog ure) (opencog pln) (opencog persist-file) (srfi srfi-1)(ice-9 threads)")
   # scheme_eval(atomspace, """(ure-logger-set-level! "debug")""")
   load_atomspace(datapath, atomspace)
   if genes:

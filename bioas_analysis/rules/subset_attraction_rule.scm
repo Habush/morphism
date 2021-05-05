@@ -52,30 +52,14 @@
              (ATTtv (stv ATTs ATTc)))
         (if (< 0 ATTc) (cog-merge-hi-conf-tv! ATT ATTtv)))))
 
-(define subset-attraction-patients-rule
-  (subset-attraction-rule (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
-(define subset-attraction-patients-rule-name
-  (DefinedSchemaNode "subset-attraction-patients-rule"))
-(DefineLink subset-attraction-patients-rule-name
-  subset-attraction-patients-rule)
-
-;; Genes
-(define subset-attraction-genes-rule
-  (subset-attraction-rule (Type "GeneNode") (TypeInh "ConceptNode")))
-; Name the rule
-(define subset-attraction-genes-rule-name
-  (DefinedSchemaNode "subset-attraction-genes-rule"))
-(DefineLink subset-attraction-genes-rule-name
-  subset-attraction-genes-rule)
-
 (define-public (create-attr-lns TYPE)
     ;; get patient atoms and run the deduction in batch
     (cog-logger-info "Generating Attraction Links")
     ;;apply fc to get the relationship between go's and patients
     (let* ((atoms (cog-get-atoms TYPE))
             (batch-num 0)
-            (batch-size (/ (length genes) (current-processor-count)))
-            (batch-ls (split-lst genes batch-size))
+            (batch-size (/ (length atoms) (current-processor-count)))
+            (batch-ls (split-lst atoms batch-size))
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
