@@ -55,37 +55,15 @@ def infer_negation(atomspace):
 def infer_attractions(atomspace):
   print("--- Inferring AttractionLinks")
   # (Subset (Set A) B)) (Subset (Not (Set A) B)) |- (Attraction (Set A) B)
-  target = """ 
-  (Attraction 
-      (Set (Variable "$X")) 
-      (Variable "$Y"))
-  """
-  bc = """
-  (pln-bc 
-    {}
-    #:maximum-iterations 2
     #:complexity-penalty 10)"""
-  scheme_eval(atomspace, "(pln-load 'empty)")
-  scheme_eval(atomspace, "(pln-load-from-path \"rules/subset_attraction_rule.scm\")")
-  scheme_eval(atomspace, "(pln-add-rule \"subset-attraction-genes-rule\")")
-  scheme_eval(atomspace, bc.format(target))
+  scheme_eval(atomspace, "(load-from-path \"rules/subset_attraction_rule.scm\")")
+  scheme_eval(atomspace, "(create-attr-lns 'GeneNode)")
 
 def get_intentional_similarity(atomspace):
   # (Attraction (Set A) X)) (Attraction (Set B) X)) |- Intensional-similarity (Set A) (Set B))
   scheme_eval(atomspace, "(pln-load 'empty)")
-  scheme_eval(atomspace, "(pln-load-from-path \"rules/genes_intensional_similarity.scm\")")
-  scheme_eval(atomspace, "(pln-add-rule \"genes-intensional-similarity-rule\")")
-  target = """ 
-  (IntensionalSimilarity 
-      (Set (Variable "$X")) 
-      (Set (Variable "$Y")))
-  """
-  bc = """
-  (pln-bc 
-    {}
-    #:maximum-iterations 2
-    #:complexity-penalty 10)"""
-  scheme_eval(atomspace, bc.format(target))
+  scheme_eval(atomspace, "(load-from-path \"rules/genes_intensional_similarity.scm\")")
+  scheme_eval(atomspace, "(create-ints-similarity-lns)")
 
 def export_result(datapath, atomspace):
   print("--- {} Exporting Atoms to files")
