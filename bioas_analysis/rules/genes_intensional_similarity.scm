@@ -163,13 +163,6 @@
              (TV (stv TVs TVc)))
         (if (< 0 TVc) (cog-merge-hi-conf-tv! IntInh TV)))))
 
-; Name the rule
-(define genes-intensional-similarity-rule-name
-  (DefinedSchemaNode "genes-intensional-similarity-rule"))
-(DefineLink genes-intensional-similarity-rule-name
-  genes-intensional-similarity-rule)
-
-
 (define-public (create-ints-similarity-lns)
     ;; get patient atoms and run the deduction in batch
     (cog-logger-info "Generating Intensional Similarity Links")

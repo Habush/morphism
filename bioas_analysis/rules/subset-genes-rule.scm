@@ -36,12 +36,6 @@
           (conf (cog-confidence memb)))
     (if (> conf 0) (cog-merge-hi-conf-tv! Ss (stv st conf))))))
 
-;; Name
-(define subset-genes-rule-name
-  (DefinedSchemaNode "subset-genes-rule"))
-(DefineLink subset-genes-rule-name subset-genes-rule)
-
-
 (define-public (create-subset-lns TYPE)
     (cog-logger-info "Generating Subset Links")
     (let* ((atoms (cog-get-atoms TYPE))

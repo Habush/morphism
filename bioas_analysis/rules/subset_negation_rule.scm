@@ -50,22 +50,6 @@
              (NStv (stv NSs NSc)))
         (cog-merge-hi-conf-tv! NS NStv))))
 
-;; Patients rule
-(define subset-negation-patients-rule
-  (subset-condition-negation (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
-;; name  
-(define subset-negation-patients-rule-name
-  (DefinedSchemaNode "subset-negation-patients-rule"))
-(DefineLink subset-negation-patients-rule-name subset-negation-patients-rule)
-
-;; Genes rule
-(define subset-condition-negation-genes-rule
-  (subset-condition-negation (Type "GeneNode") (TypeInh "ConceptNode")))
-;; Name
-(define subset-condition-negation-genes-rule-name
-  (DefinedSchemaNode "subset-condition-negation-genes-rule"))
-(DefineLink subset-condition-negation-genes-rule-name subset-condition-negation-genes-rule)
-
 (define-public (create-subset-neg-lns TYPE)
     (cog-logger-info "Generating Subset Negation Links")
     (let* ((atoms (cog-get-atoms TYPE))
