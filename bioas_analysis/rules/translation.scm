@@ -29,7 +29,7 @@
             (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
-              (for-each (lambda (n )
+              (for-each (lambda (ln)
                   (gen-present-link-translation-rule ln SubsetLink ConceptT)) batch)) batches)
         (cog-logger-info "Done!")))
 
