@@ -89,7 +89,7 @@ def get_node(satLink, abs_ge=False):
 def build_property_vectors(atomspace, node_type, p, T, abs_ge):
   print("--- Building property vectors")
   links_to_check = atomspace.get_atoms_by_type(types.AttractionLink) + atomspace.get_atoms_by_type(types.IntensionalSimilarityLink)
-  ppty = set([i.out[1] for i in links_to_check if not "VariableNode" in str(i)])
+  ppty = set([i.out[1] for i in links_to_check])
   nodes = set([i.out[0] for i in links_to_check])
   print("Number of {}: {}".format(node_type, len(nodes)))
   print("Number of properties: {}".format(len(ppty)))
