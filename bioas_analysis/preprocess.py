@@ -32,9 +32,9 @@ def infer_subsets(atomspace):
   scheme_eval(atomspace, "(inheritance->subset)")
   print("--- Applying Transitivity Rules")
   # (Subset C1 C2) (Subset C2 C3) |- (Subset C1 C3)
-  scheme_eval(atomspace, "(gen-present-link-transitivity 'SubsetLink)")
+  scheme_eval(atomspace, "(gen-present-link-transitivity)")
   # (Member G C1) (Subset C1 C2) |- (Member G C2)
-  scheme_eval(atomspace, "(gen-present-mixed-link-transitivity 'MemberLink 'SubsetLink)")
+  scheme_eval(atomspace, "(gen-present-mixed-link-transitivity)")
 
 def calculate_truth_values(atomspace):
   print("--- Calculating Truth Values")
