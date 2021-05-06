@@ -38,9 +38,9 @@
         (Not (Identical X Z)))
       XZ)))
 
-(define-public (gen-present-link-transitivity TYPE)
+(define-public (gen-present-link-transitivity)
     (cog-logger-info "Running gen-present-link-transitivity")
-    (let* ((atoms (cog-get-atoms TYPE))
+    (let* ((atoms (cog-get-atoms 'SubsetLink))
             (batch-num 0)
             (batch-size (round (/ (length atoms) (current-processor-count))))
             (batch-ls (split-lst atoms batch-size))
@@ -48,14 +48,14 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
-                  (gen-present-link-transitivity-rule ln TYPE ConceptT)) (cdr batch))) batches)
+                  (gen-present-link-transitivity-rule ln SubsetLink ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
-(define-public (gen-present-mixed-link-transitivity LINK-1-TYPE LINK-2-TYPE)
+(define-public (gen-present-mixed-link-transitivity)
     ;; get patient atoms and run the deduction in batch
     (cog-logger-info "Running gen-present-link-transitivity")
     ;;apply fc to get the relationship between go's and patients
-    (let* ((atoms (cog-get-atoms LINK-1-TYPE))
+    (let* ((atoms (cog-get-atoms 'MemberLink))
             (batch-num 0)
             (batch-size (round (/ (length atoms) (current-processor-count))))
             (batch-ls (split-lst atoms batch-size))
@@ -63,7 +63,7 @@
         
         (n-par-for-each (current-processor-count)  (lambda (batch)
               (for-each (lambda (ln)
-                  (gen-present-mixed-link-transitivity-rule ln LINK-1-TYPE LINK-2-TYPE
+                  (gen-present-mixed-link-transitivity-rule ln MemberLink SubsetLink
                     ConceptT)) (cdr batch))) batches)
         (cog-logger-info "Done!")))
 
