@@ -55,9 +55,9 @@
         (cog-merge-hi-conf-tv! NS NStv))))
 
 ;; Patients rule
-(define subset-negation-patients-rule
+(define (subset-negation-patients-rule)
   (subset-condition-negation (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
 
 ;; Genes rule
-(define subset-condition-negation-genes-rule
+(define (subset-condition-negation-genes-rule)
   (subset-condition-negation (Type "GeneNode") (TypeInh "ConceptNode")))

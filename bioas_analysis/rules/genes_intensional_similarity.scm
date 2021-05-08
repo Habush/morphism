@@ -66,7 +66,7 @@
 ;;   (Attraction A X))
 
 ;; Rule
-(define genes-intensional-similarity-rule
+(define (genes-intensional-similarity-rule)
   (let* ((A (Variable "$A"))
          (B (Variable "$B"))
          (X (Variable "$X")))

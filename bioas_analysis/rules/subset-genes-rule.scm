@@ -14,7 +14,7 @@
 
 ;; Rule for Subset
 ;;
-(define subset-genes-rule
+(define (subset-genes-rule)
   (let* ((A (Variable "$A"))
          (B (Variable "$B")))
     (Bind
