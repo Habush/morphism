@@ -3,6 +3,7 @@ from utils import *
 from generate_embedding import *
 from preprocess import calculate_truth_values, infer_subsets
 import argparse
+from timeit import default_timer as timer
 
 log.set_level("ERROR")
 
@@ -54,6 +55,7 @@ def export_result(datapath, atomspace):
 
 def generate_links_genes(datapath, doinhrule=False, genes=False):
   ### Initialize the AtomSpace ###
+  start_1 = timer()
   atomspace = AtomSpace()
   initialize_opencog(atomspace)
 
@@ -70,10 +72,28 @@ def generate_links_genes(datapath, doinhrule=False, genes=False):
     infer_subsets(atomspace)
   calculate_truth_values(atomspace) # for the memberlink and GO
   gene_singleton_tv(atomspace)
+  start = timer()
+  print("----Applying Subset rule---")
   generate_subsets(atomspace)
+  end = timer()
+  print("Subset rule done in {0}".format(end - start))
+  start = timer()
+  print("----Applying Subset negation rule---")
   infer_negation(atomspace)
+  end = timer()
+  print("Subset negation rule done in {0}".format(end - start))
+  start = timer()
+  print("----Applying Attraction rule---")
   infer_attractions(atomspace)
-  get_intentional_similarity(atomspace)
+  end = timer()
+  print("Attraction rule done in {0}".format(end - start))
+  start = timer()
+  print("----Applying Intensional Similarity rule---")
+  get_intentional_similarity(atomspace) # Replace this with a intensional similarity kernel
+  end = timer()
+  print("Intensional Similarity rule done in {0}".format(end - start))
+  end_1 = timer()
+  print("Done. It took {0} seconds in total".format(end_1 - start_1))
   return atomspace
 
 def parse_args():

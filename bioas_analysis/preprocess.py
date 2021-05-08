@@ -1,6 +1,7 @@
 import os
 from datetime import date
 from utils import *
+from timeit import default_timer as timer
 
 base_datasets_dir = os.getcwd() + "/bioas/"
 base_results_dir = os.getcwd() + "/results/bioas-{}/".format(str(date.today()))
@@ -28,13 +29,19 @@ def infer_subsets(atomspace):
   scheme_eval(atomspace, "(load-from-path \"rules/translation.scm\")")
   scheme_eval(atomspace, "(load-from-path \"rules/transitivity.scm\")")
   # (Inheritance C1 C2) |- (Subset C1 C2)
+  start = timer()
   print("--- Applying Translation Rule")
   scheme_eval(atomspace, "(inheritance->subset)")
+  end = timer()
+  print("---Translation Rule done in {0}".format(end - start))
+  start = timer()
   print("--- Applying Transitivity Rules")
   # (Subset C1 C2) (Subset C2 C3) |- (Subset C1 C3)
   scheme_eval(atomspace, "(gen-present-link-transitivity)")
   # (Member G C1) (Subset C1 C2) |- (Member G C2)
   scheme_eval(atomspace, "(gen-present-mixed-link-transitivity)")
+  end = timer()
+  print("---Transitivity Rule done in {0}".format(end - start))
 
 def calculate_truth_values(atomspace):
   print("--- Calculating Truth Values")
