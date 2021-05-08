@@ -69,9 +69,6 @@
 (define (genes-intensional-similarity-rule A B)
   (let* ((X (Variable "$X")))
     (Bind
-      (VariableSet
-        (TypedVariable A (Type "GeneNode"))
-        (TypedVariable B (Type "GeneNode")))
       (And
         (Present
           A
