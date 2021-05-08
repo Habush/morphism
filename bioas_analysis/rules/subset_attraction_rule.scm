@@ -29,6 +29,8 @@
 (define (subset-attraction-rule A)
   (let* ((B (Variable "$B")))
     (BindLink
+      (VariableSet
+        (TypedVariable B (TypeInh "ConceptNode")))
       (Present
         (Subset (Set A) B)
         (Subset (Not (Set A)) B))

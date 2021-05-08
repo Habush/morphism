@@ -15,6 +15,8 @@
 (define (subset-condition-negation A)
   (let* ((B (Variable "$B")))
     (Bind
+      (VariableSet
+        (TypedVariable B (TypeInh "ConceptNode")))
       (Present
         (Subset (Set A) B))
       (ExecutionOutput
