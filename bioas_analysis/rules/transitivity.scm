@@ -9,6 +9,7 @@
   (let* ((X (Variable "$X"))
          (Y (Variable "$Y"))
          (Z (Variable "$Z"))
+         (XY (LINK-TYPE X Y))
          (YZ (LINK-TYPE Y Z))
          (XZ (LINK-TYPE X Z)))
     (Bind
@@ -46,7 +47,7 @@
 (define-public (gen-present-link-transitivity)
     (cog-logger-info "Running gen-present-link-transitivity")
     (gen-present-link-transitivity-rule SubsetLink ConceptT)
-    (cog-logger-info "Done!")))
+    (cog-logger-info "Done!"))
 
 (define-public (gen-present-mixed-link-transitivity)
     (gen-present-mixed-link-transitivity-rule MemberLink
