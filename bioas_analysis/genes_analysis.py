@@ -16,7 +16,7 @@ def load_atomspace(datapath, atomspace):
 def generate_subsets(atomspace):
   print("--- Infer subsets between gene singletons and concepts")
   scheme_eval(atomspace, "(load-from-path \"rules/subset-genes-rule.scm\")")
-  scheme_eval(atomspace, "(create-subset-lns 'GeneNode)")
+  scheme_eval(atomspace, "(subset-genes-rule)")
 
 def gene_singleton_tv(atomspace):
     print("--- Assign TV for gene singletons")
@@ -31,20 +31,20 @@ def infer_negation(atomspace):
   print("--- Inferring Subset Negation")
   # (Subset (Set A) B) |- (Subset (Not (Set A) B))
   scheme_eval(atomspace, "(load-from-path \"rules/subset_negation_rule.scm\")")
-  scheme_eval(atomspace, "(create-subset-neg-lns 'GeneNode)")
+  scheme_eval(atomspace, "(subset-condition-negation-genes-rule)")
 
 def infer_attractions(atomspace):
   print("--- Inferring AttractionLinks")
   # (Subset (Set A) B)) (Subset (Not (Set A) B)) |- (Attraction (Set A) B)
     #:complexity-penalty 10)"""
   scheme_eval(atomspace, "(load-from-path \"rules/subset_attraction_rule.scm\")")
-  scheme_eval(atomspace, "(create-attr-lns 'GeneNode)")
+  scheme_eval(atomspace, "(subset-attraction-genes-rule)")
 
 def get_intentional_similarity(atomspace):
   # (Attraction (Set A) X)) (Attraction (Set B) X)) |- Intensional-similarity (Set A) (Set B))
   scheme_eval(atomspace, "(pln-load 'empty)")
   scheme_eval(atomspace, "(load-from-path \"rules/genes_intensional_similarity.scm\")")
-  scheme_eval(atomspace, "(create-ints-similarity-lns)")
+  scheme_eval(atomspace, "(genes-intensional-similarity-rule)")
 
 def export_result(datapath, atomspace):
   print("--- {} Exporting Atoms to files")

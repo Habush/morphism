@@ -66,9 +66,14 @@
 ;;   (Attraction A X))
 
 ;; Rule
-(define (genes-intensional-similarity-rule A B)
-  (let* ((X (Variable "$X")))
+(define genes-intensional-similarity-rule
+  (let* ((A (Variable "$A"))
+         (B (Variable "$B"))
+         (X (Variable "$X")))
     (Bind
+      (VariableSet
+        (TypedVariable A (Type "GeneNode"))
+        (TypedVariable B (Type "GeneNode")))
       (And
         (Present
           A
@@ -76,14 +81,14 @@
         ;; There exists X such that
         ;;
         ;; (Attraction (Set A) X)
-        ;; (Attraction (Set B) X)
+        ;; (Attraction (Set A) X)
         ;;
         ;; are present in the atomspace
         (Satisfaction
           (TypedVariable X (TypeInh "ConceptNode"))
           (Present
             (Attraction (Set A) X)
-            (Attraction (Set B) X)))
+            (Attraction (Set A) X)))
         ;; A and B are different
         (Not (Equal A B)))
        (ExecutionOutput
@@ -162,33 +167,3 @@
              (TVc (count->confidence (length B-ats)))
              (TV (stv TVs TVc)))
         (if (< 0 TVc) (cog-merge-hi-conf-tv! IntInh TV)))))
-
-(define-public (create-ints-similarity-lns)
-    ;; get patient atoms and run the deduction in batch
-    (cog-logger-info "Generating Intensional Similarity Links")
-    ;;apply fc to get the relationship between go's and patients
-    (let* ((genes (cog-get-atoms 'GeneNode))
-            (batch-num 0)
-            (batch-size (round (/ (length genes) (current-processor-count))))
-            (batch-ls (split-lst genes batch-size))
-            (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
-        
-        (n-par-for-each (current-processor-count)  (lambda (batch)
-              (for-each (lambda (gene-a)
-                  (for-each (lambda (gene-b)
-                    (genes-intensional-similarity-rule gene-a gene-b)) genes)) (cdr batch))
-) batches)
-        (cog-logger-info "Done!")))
-
-(define-public (take-custom lst n)
-    (if (< (length lst) n)
-        (take lst (length lst))
-        (take lst n)))
-
-(define-public (drop-custom lst n)
-    (if (< (length lst) n)
-        (drop lst (length lst))
-        (drop lst n)))
-(define-public (split-lst lst n)
-    (if (null? lst) '()
-        (cons (take-custom lst n) (split-lst (drop-custom lst n) n))))

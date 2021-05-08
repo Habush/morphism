@@ -26,11 +26,13 @@
 ;; where s(B) is the prior of B and x+ is the positive part of x. For
 ;; now the prior of B is 1.
 
-(define (subset-attraction-rule A)
-  (let* ((B (Variable "$B")))
+(define (subset-attraction-rule TYPE1 TYPE2)
+  (let* ((A (Variable "$A"))
+         (B (Variable "$B")))
     (BindLink
       (VariableSet
-        (TypedVariable B (TypeInh "ConceptNode")))
+        (TypedVariable A TYPE1)
+        (TypedVariable B TYPE2))
       (Present
         (Subset (Set A) B)
         (Subset (Not (Set A)) B))
@@ -54,30 +56,8 @@
              (ATTtv (stv ATTs ATTc)))
         (if (< 0 ATTc) (cog-merge-hi-conf-tv! ATT ATTtv)))))
 
-(define-public (create-attr-lns TYPE)
-    ;; get patient atoms and run the deduction in batch
-    (cog-logger-info "Generating Attraction Links")
-    ;;apply fc to get the relationship between go's and patients
-    (let* ((atoms (cog-get-atoms TYPE))
-            (batch-num 0)
-            (batch-size (round (/ (length atoms) (current-processor-count))))
-            (batch-ls (split-lst atoms batch-size))
-            (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
-        
-        (n-par-for-each (current-processor-count)  (lambda (batch)
-              (for-each (lambda (a)
-                  (subset-attraction-rule a)) (cdr batch))) batches)
-        (cog-logger-info "Done!")))
+(define subset-attraction-patients-rule
+  (subset-attraction-rule (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
 
-(define-public (take-custom lst n)
-    (if (< (length lst) n)
-        (take lst (length lst))
-        (take lst n)))
-
-(define-public (drop-custom lst n)
-    (if (< (length lst) n)
-        (drop lst (length lst))
-        (drop lst n)))
-(define-public (split-lst lst n)
-    (if (null? lst) '()
-        (cons (take-custom lst n) (split-lst (drop-custom lst n) n))))
+(define subset-attraction-genes-rule
+  (subset-attraction-rule (Type "GeneNode") (TypeInh "ConceptNode")))

@@ -14,10 +14,12 @@
 
 ;; Rule for Subset
 ;;
-(define (subset-genes-rule A)
-  (let* ((B (Variable "$B")))
+(define subset-genes-rule
+  (let* ((A (Variable "$A"))
+         (B (Variable "$B")))
     (Bind
       (VariableSet
+        (TypedVariable A (Type "GeneNode"))
         (TypedVariable B (TypeInh "ConceptNode")))
       (Present
         (Member A B))
@@ -35,29 +37,3 @@
           (st (cog-mean memb))
           (conf (cog-confidence memb)))
     (if (> conf 0) (cog-merge-hi-conf-tv! Ss (stv st conf))))))
-
-(define-public (create-subset-lns TYPE)
-    (cog-logger-info "Generating Subset Links")
-    (let* ((atoms (cog-get-atoms TYPE))
-            (batch-num 0)
-            (batch-size (round (/ (length atoms) (current-processor-count))))
-            (batch-ls (split-lst atoms batch-size))
-            (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
-        
-        (n-par-for-each (current-processor-count)  (lambda (batch)
-              (for-each (lambda (a)
-                  (subset-genes-rule a)) (cdr batch))) batches)
-        (cog-logger-info "Done!")))
-
-(define-public (take-custom lst n)
-    (if (< (length lst) n)
-        (take lst (length lst))
-        (take lst n)))
-
-(define-public (drop-custom lst n)
-    (if (< (length lst) n)
-        (drop lst (length lst))
-        (drop lst n)))
-(define-public (split-lst lst n)
-    (if (null? lst) '()
-        (cons (take-custom lst n) (split-lst (drop-custom lst n) n))))

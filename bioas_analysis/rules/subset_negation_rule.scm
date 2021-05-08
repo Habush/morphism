@@ -12,11 +12,13 @@
 ;;   B
 ;;
 
-(define (subset-condition-negation A)
-  (let* ((B (Variable "$B")))
+(define (subset-condition-negation TYPE1 TYPE2)
+  (let* ((A (Variable "$A"))
+         (B (Variable "$B")))
     (Bind
       (VariableSet
-        (TypedVariable B (TypeInh "ConceptNode")))
+        (TypedVariable A TYPE1)
+        (TypedVariable B TYPE2))
       (Present
         (Subset (Set A) B))
       (ExecutionOutput
@@ -52,28 +54,10 @@
              (NStv (stv NSs NSc)))
         (cog-merge-hi-conf-tv! NS NStv))))
 
-(define-public (create-subset-neg-lns TYPE)
-    (cog-logger-info "Generating Subset Negation Links")
-    (let* ((atoms (cog-get-atoms TYPE))
-            (batch-num 0)
-            (batch-size (round (/ (length atoms) (current-processor-count))))
-            (batch-ls (split-lst atoms batch-size))
-            (batches (map (lambda (b) (set! batch-num (+ batch-num 1)) (cons batch-num b)) batch-ls)))
-        
-        (n-par-for-each (current-processor-count)  (lambda (batch)
-              (for-each (lambda (a)
-                  (subset-condition-negation a)) (cdr batch))) batches)
-        (cog-logger-info "Done!")))
+;; Patients rule
+(define subset-negation-patients-rule
+  (subset-condition-negation (Type "PatientNode") (Type "SatisfyingSetScopeLink")))
 
-(define-public (take-custom lst n)
-    (if (< (length lst) n)
-        (take lst (length lst))
-        (take lst n)))
-
-(define-public (drop-custom lst n)
-    (if (< (length lst) n)
-        (drop lst (length lst))
-        (drop lst n)))
-(define-public (split-lst lst n)
-    (if (null? lst) '()
-        (cons (take-custom lst n) (split-lst (drop-custom lst n) n))))
+;; Genes rule
+(define subset-condition-negation-genes-rule
+  (subset-condition-negation (Type "GeneNode") (TypeInh "ConceptNode")))
